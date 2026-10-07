@@ -1,510 +1,448 @@
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Barbería en Castro Urdiales | Infinity Barber</title>
-  <meta name="description" content="Barbería en Castro Urdiales: cortes, degradados, arreglo de barba y peinados. Calle Victorina Gaínza, 4. Reserva tu cita por WhatsApp o teléfono.">
-  <meta name="robots" content="index, follow">
-  <meta name="theme-color" content="#121212">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Infinity Barber | Barbería en Castro Urdiales">
-  <meta property="og:description" content="Estilo sin límites en Castro Urdiales. Cortes, fades y barba. Reserva por WhatsApp.">
-  <meta property="og:locale" content="es_ES">
-  <meta property="og:image" content="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&h=630&q=70">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            ink: "#121212",
-            coal: "#1A1A1A",
-            card: "#1F1F1F",
-            line: "#2E2E2E",
-            bone: "#F5F1E8",
-            mute: "#A8A29A",
-            gold: { DEFAULT: "#C9A24B", light: "#E6C57A", dark: "#8A6A2A" }
-          },
-          fontFamily: {
-            sans: ["Inter", "system-ui", "sans-serif"],
-            display: ["Oswald", "Impact", "sans-serif"]
-          },
-          borderRadius: { card: "1.25rem" }
-        }
-      }
-    };
-  </script>
-  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js" defer></script>
-
-  <style>
-    html { scroll-behavior: smooth; }
-    section[id] { scroll-margin-top: 5rem; }
-    /* Logo texturizado: degradado metálico + trama diagonal */
-    .logo-text {
-      background-image:
-        repeating-linear-gradient(135deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px),
-        linear-gradient(180deg, #F3DC9A 0%, #C9A24B 48%, #8A6A2A 100%);
-      -webkit-background-clip: text; background-clip: text;
-      color: transparent; -webkit-text-fill-color: transparent;
-    }
-    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
-    .reveal.is-visible { opacity: 1; transform: none; }
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      .reveal { opacity: 1; transform: none; transition: none; }
-    }
-  </style>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": ["HairSalon", "LocalBusiness"],
-    "name": "Infinity Barber",
-    "description": "Barbería en Castro Urdiales: cortes de pelo, degradados, arreglo y perfilado de barba, tratamientos capilares y peinados.",
-    "telephone": "+34942001122",
-    "email": "contacto@infinitybarber.es",
-    "image": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&q=70",
-    "priceRange": "€€",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "Calle Victorina Gaínza, 4",
-      "addressLocality": "Castro Urdiales",
-      "addressRegion": "Cantabria",
-      "postalCode": "39700",
-      "addressCountry": "ES"
-    },
-    "hasMap": "https://www.google.com/maps/search/?api=1&query=Calle+Victorina+Gainza+4+Castro+Urdiales",
-    "openingHoursSpecification": [
-      { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "10:00", "closes": "14:00" },
-      { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "16:30", "closes": "20:30" },
-      { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "09:00", "closes": "14:00" }
-    ],
-    "areaServed": { "@type": "City", "name": "Castro Urdiales" },
-    "sameAs": ["https://instagram.com/infinitybarber_castro"],
-    "contactPoint": { "@type": "ContactPoint", "contactType": "reservas", "telephone": "+34611223344", "availableLanguage": "es" }
-  }
-  </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barbería en Castro Urdiales | Infinity Barber</title>
+<meta name="description" content="Infinity Barber, barbería en Castro Urdiales: cortes, degradados, arreglo de barba y peinados. Calle Victorina Gaínza, 4. Reserva tu cita por WhatsApp o teléfono.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0F0F10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F0F10'/%3E%3Cpath d='M16 32c0-7 5-12 11-12 8 0 10 24 21 24 6 0 8-5 8-12s-2-12-8-12c-11 0-13 24-21 24-6 0-11-5-11-12z' fill='none' stroke='%23C9A24B' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Infinity Barber | Barbería en Castro Urdiales">
+<meta property="og:description" content="Estilo sin límites en Castro Urdiales. Cortes, fades y barba. Reserva por WhatsApp.">
+<meta property="og:locale" content="es_ES">
+<style>*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.inset-x-0{left:0;right:0}.-right-32{right:-8rem}.bottom-0{bottom:0}.top-0{top:0}.isolate{isolation:isolate}.-z-10{z-index:-10}.-z-20{z-index:-20}.z-50{z-index:50}.mx-auto{margin-left:auto;margin-right:auto}.mb-4{margin-bottom:1rem}.mt-1{margin-top:.25rem}.mt-10{margin-top:2.5rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.aspect-square{aspect-ratio:1/1}.h-10{height:2.5rem}.h-11{height:2.75rem}.h-16{height:4rem}.h-3\.5{height:.875rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-7{height:1.75rem}.h-8{height:2rem}.h-\[30rem\]{height:30rem}.h-full{height:100%}.max-h-\[85vh\]{max-height:85vh}.min-h-\[1\.25rem\]{min-height:1.25rem}.min-h-\[360px\]{min-height:360px}.min-h-\[44px\]{min-height:44px}.min-h-\[46px\]{min-height:46px}.min-h-\[48px\]{min-height:48px}.min-h-\[50px\]{min-height:50px}.min-h-\[52px\]{min-height:52px}.min-h-\[54px\]{min-height:54px}.w-10{width:2.5rem}.w-11{width:2.75rem}.w-16{width:4rem}.w-3\.5{width:.875rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-7{width:1.75rem}.w-8{width:2rem}.w-\[30rem\]{width:30rem}.w-\[calc\(100\%-2rem\)\]{width:calc(100% - 2rem)}.w-full{width:100%}.max-w-2xl{max-width:42rem}.max-w-3xl{max-width:48rem}.max-w-5xl{max-width:64rem}.max-w-6xl{max-width:72rem}.max-w-sm{max-width:24rem}.max-w-xl{max-width:36rem}.flex-1{flex:1 1 0%}.flex-none{flex:none}.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-pointer{cursor:pointer}.scroll-mt-24{scroll-margin-top:6rem}.list-disc{list-style-type:disc}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-10{gap:2.5rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-6{gap:1.5rem}.gap-8{gap:2rem}.gap-x-5{-moz-column-gap:1.25rem;column-gap:1.25rem}.gap-y-2{row-gap:.5rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-1\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.375rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.375rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.space-y-5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.25rem*var(--tw-space-y-reverse))}.space-y-6>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem*var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-y-auto{overflow-y:auto}.scroll-smooth{scroll-behavior:smooth}.whitespace-nowrap{white-space:nowrap}.break-all{word-break:break-all}.rounded{border-radius:.25rem}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.rounded-\[calc\(1\.5rem-1px\)\]{border-radius:calc(1.5rem - 1px)}.rounded-full{border-radius:9999px}.rounded-xl{border-radius:.75rem}.border{border-width:1px}.border-0{border-width:0}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-bone\/60{border-color:hsla(42,39%,94%,.6)}.border-gold{--tw-border-opacity:1;border-color:rgb(201 162 75/var(--tw-border-opacity,1))}.border-gold\/50{border-color:rgba(201,162,75,.5)}.border-gold\/60{border-color:rgba(201,162,75,.6)}.border-line{--tw-border-opacity:1;border-color:rgb(44 44 47/var(--tw-border-opacity,1))}.border-white\/20{border-color:hsla(0,0%,100%,.2)}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0/var(--tw-bg-opacity,1))}.bg-bone{--tw-bg-opacity:1;background-color:rgb(245 241 232/var(--tw-bg-opacity,1))}.bg-card{--tw-bg-opacity:1;background-color:rgb(29 29 31/var(--tw-bg-opacity,1))}.bg-coal{--tw-bg-opacity:1;background-color:rgb(22 22 23/var(--tw-bg-opacity,1))}.bg-gold{--tw-bg-opacity:1;background-color:rgb(201 162 75/var(--tw-bg-opacity,1))}.bg-gold\/10{background-color:rgba(201,162,75,.1)}.bg-gold\/15{background-color:rgba(201,162,75,.15)}.bg-gold\/20{background-color:rgba(201,162,75,.2)}.bg-gold\/5{background-color:rgba(201,162,75,.05)}.bg-ink{--tw-bg-opacity:1;background-color:rgb(15 15 16/var(--tw-bg-opacity,1))}.bg-ink\/90{background-color:rgba(15,15,16,.9)}.bg-ink\/95{background-color:rgba(15,15,16,.95)}.bg-gradient-to-b{background-image:linear-gradient(to bottom,var(--tw-gradient-stops))}.bg-gradient-to-br{background-image:linear-gradient(to bottom right,var(--tw-gradient-stops))}.from-card{--tw-gradient-from:#1d1d1f var(--tw-gradient-from-position);--tw-gradient-to:rgba(29,29,31,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-coal{--tw-gradient-from:#161617 var(--tw-gradient-from-position);--tw-gradient-to:rgba(22,22,23,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-gold{--tw-gradient-from:#c9a24b var(--tw-gradient-from-position);--tw-gradient-to:rgba(201,162,75,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.via-gold-dark{--tw-gradient-to:rgba(138,106,42,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),#8a6a2a var(--tw-gradient-via-position),var(--tw-gradient-to)}.to-gold\/40{--tw-gradient-to:rgba(201,162,75,.4) var(--tw-gradient-to-position)}.to-ink{--tw-gradient-to:#0f0f10 var(--tw-gradient-to-position)}.p-0{padding:0}.p-2\.5{padding:.625rem}.p-3{padding:.75rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-px{padding:1px}.px-1{padding-left:.25rem;padding-right:.25rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.px-7{padding-left:1.75rem;padding-right:1.75rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-12{padding-top:3rem;padding-bottom:3rem}.py-14{padding-top:3.5rem;padding-bottom:3.5rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.pb-24{padding-bottom:6rem}.pl-5{padding-left:1.25rem}.pr-4{padding-right:1rem}.pt-6{padding-top:1.5rem}.text-left{text-align:left}.text-center{text-align:center}.font-sans{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-normal{font-weight:400}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.not-italic{font-style:normal}.leading-\[1\.02\]{line-height:1.02}.leading-relaxed{line-height:1.625}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-\[0\.16em\]{letter-spacing:.16em}.tracking-\[0\.25em\]{letter-spacing:.25em}.tracking-wide{letter-spacing:.025em}.text-bone{--tw-text-opacity:1;color:rgb(245 241 232/var(--tw-text-opacity,1))}.text-gold{--tw-text-opacity:1;color:rgb(201 162 75/var(--tw-text-opacity,1))}.text-gold-light{--tw-text-opacity:1;color:rgb(230 197 122/var(--tw-text-opacity,1))}.text-ink{--tw-text-opacity:1;color:rgb(15 15 16/var(--tw-text-opacity,1))}.text-mute{--tw-text-opacity:1;color:rgb(168 162 154/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.underline-offset-2{text-underline-offset:2px}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-2xl,.shadow-lg{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-black\/40{--tw-shadow-color:rgba(0,0,0,.4);--tw-shadow:var(--tw-shadow-colored)}.shadow-gold\/10{--tw-shadow-color:rgba(201,162,75,.1);--tw-shadow:var(--tw-shadow-colored)}.blur-3xl{--tw-blur:blur(64px)}.blur-3xl,.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}html{scroll-behavior:smooth}section[id]{scroll-margin-top:5.5rem}.ic{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.ic,.icf{flex:none}.icf{fill:currentColor}.bi{width:100%;height:100%;overflow:visible}.reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}.reveal.is-visible{opacity:1;transform:none}.btn-gold{background:linear-gradient(180deg,#e6c57a,#c9a24b 60%,#a9822f);color:#121212;font-weight:800;box-shadow:inset 0 1px 0 hsla(0,0%,100%,.5)}.btn-gold:hover{filter:brightness(1.08)}.text-gold-grad{background:linear-gradient(180deg,#f3dc9a,#c9a24b 55%,#8a6a2a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}.bl-a,.bl-b{transform-box:view-box;transform-origin:32px 32px}.bl-a{animation:cutA 2.6s ease-in-out infinite}.bl-b{animation:cutB 2.6s ease-in-out infinite}@keyframes cutA{0%,to{transform:rotate(-7deg)}50%{transform:rotate(9deg)}}@keyframes cutB{0%,to{transform:rotate(7deg)}50%{transform:rotate(-9deg)}}.fbar{transform-box:fill-box;transform-origin:bottom;animation:fbar 2.4s ease-in-out infinite}@keyframes fbar{0%,to{transform:scaleY(1)}50%{transform:scaleY(.72)}}.rz{transform-box:view-box;transform-origin:32px 42px;animation:rz 3.2s ease-in-out infinite}@keyframes rz{0%,to{transform:rotate(-12deg)}50%{transform:rotate(8deg)}}.tooth{transform-box:fill-box;transform-origin:top;animation:tooth 1.8s ease-in-out infinite}@keyframes tooth{0%,to{transform:scaleY(1)}50%{transform:scaleY(.8)}}.twinkle{transform-box:fill-box;transform-origin:center;animation:twinkle 2.2s ease-in-out infinite}@keyframes twinkle{0%,to{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.5}}.svc:hover .bl-a,.svc:hover .bl-b{animation-duration:.8s}.svc:hover .fbar{animation-duration:.9s}.svc:hover .rz{animation-duration:1.2s}.pole{position:relative;width:5.5rem;height:21rem;border-radius:2.75rem;overflow:hidden;border:4px solid #c9a24b;box-shadow:0 0 0 2px #1d1d1f,0 20px 60px rgba(201,162,75,.25);background:repeating-linear-gradient(-45deg,#b3261e 0 18px,#f5f1e8 18px 36px,#1f3a5f 36px 54px,#f5f1e8 54px 72px);background-size:100% 102px;animation:pole 3.2s linear infinite}.pole:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.45),hsla(0,0%,100%,.35) 30%,transparent 55%,rgba(0,0,0,.4))}@keyframes pole{to{background-position:0 102px}}.pole-cap{width:6.5rem;height:1.6rem;border-radius:9999px;background:linear-gradient(180deg,#f3dc9a,#c9a24b 55%,#8a6a2a);box-shadow:0 6px 14px rgba(0,0,0,.5)}.float{animation:float 6s ease-in-out infinite}@keyframes float{0%,to{transform:translateY(0)}50%{transform:translateY(-8px)}}.estado{background:#1d1d1f;color:#f5f1e8;border:1px solid #2c2c2f}.estado-punto{width:.6rem;height:.6rem;border-radius:9999px;background:#9ca3af}.estado[data-abierto="1"]{border-color:rgba(34,197,94,.4);color:#86efac}.estado[data-abierto="1"] .estado-punto{background:#22c55e;animation:pulse 1.8s ease-in-out infinite}.estado[data-abierto="0"]{border-color:rgba(239,68,68,.4);color:#fca5a5}.estado[data-abierto="0"] .estado-punto{background:#ef4444}@keyframes pulse{0%,to{box-shadow:0 0 0 0 rgba(34,197,94,.5)}50%{box-shadow:0 0 0 6px rgba(34,197,94,0)}}[data-estado-linea][data-abierto="1"]{color:#86efac}[data-estado-linea][data-abierto="0"]{color:#fca5a5}tr[data-hoy="1"] td,tr[data-hoy="1"] th{color:#e6c57a;font-weight:800}dialog{margin:auto}dialog::backdrop{background:hsla(0,0%,4%,.85);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}.fade-btn[aria-pressed=true]{background:linear-gradient(180deg,#e6c57a,#c9a24b);color:#121212;border-color:transparent}.grid-bg{background-image:linear-gradient(hsla(0,0%,100%,.035) 1px,transparent 0),linear-gradient(90deg,hsla(0,0%,100%,.035) 1px,transparent 0);background-size:44px 44px}@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.bl-a,.bl-b,.fbar,.float,.pole,.rz,.tooth,.twinkle{animation:none}}.hover\:-translate-y-1:hover{--tw-translate-y:-0.25rem;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:border-gold:hover{--tw-border-opacity:1;border-color:rgb(201 162 75/var(--tw-border-opacity,1))}.hover\:border-gold\/50:hover{border-color:rgba(201,162,75,.5)}.hover\:border-gold\/60:hover{border-color:rgba(201,162,75,.6)}.hover\:bg-coal:hover{--tw-bg-opacity:1;background-color:rgb(22 22 23/var(--tw-bg-opacity,1))}.hover\:bg-gold:hover{--tw-bg-opacity:1;background-color:rgb(201 162 75/var(--tw-bg-opacity,1))}.hover\:text-gold-light:hover{--tw-text-opacity:1;color:rgb(230 197 122/var(--tw-text-opacity,1))}.hover\:text-ink:hover{--tw-text-opacity:1;color:rgb(15 15 16/var(--tw-text-opacity,1))}.hover\:shadow-xl:hover{--tw-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color),0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.hover\:shadow-gold\/10:hover{--tw-shadow-color:rgba(201,162,75,.1);--tw-shadow:var(--tw-shadow-colored)}.focus\:not-sr-only:focus{position:static;width:auto;height:auto;padding:0;margin:0;overflow:visible;clip:auto;white-space:normal}.focus\:fixed:focus{position:fixed}.focus\:left-4:focus{left:1rem}.focus\:top-4:focus{top:1rem}.focus\:z-\[100\]:focus{z-index:100}.focus\:rounded-full:focus{border-radius:9999px}.focus\:border-gold:focus{--tw-border-opacity:1;border-color:rgb(201 162 75/var(--tw-border-opacity,1))}.focus\:bg-gold:focus{--tw-bg-opacity:1;background-color:rgb(201 162 75/var(--tw-bg-opacity,1))}.focus\:px-4:focus{padding-left:1rem;padding-right:1rem}.focus\:py-2:focus{padding-top:.5rem;padding-bottom:.5rem}.focus\:text-ink:focus{--tw-text-opacity:1;color:rgb(15 15 16/var(--tw-text-opacity,1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}.focus\:ring-2:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.focus\:ring-gold\/40:focus{--tw-ring-color:rgba(201,162,75,.4)}.focus-visible\:ring-2:focus-visible{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.focus-visible\:ring-4:focus-visible{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.focus-visible\:ring-gold:focus-visible{--tw-ring-opacity:1;--tw-ring-color:rgb(201 162 75/var(--tw-ring-opacity,1))}.focus-visible\:ring-gold\/40:focus-visible{--tw-ring-color:rgba(201,162,75,.4)}.active\:scale-\[0\.98\]:active{--tw-scale-x:0.98;--tw-scale-y:0.98}.active\:scale-\[0\.98\]:active,.group:hover .group-hover\:scale-110{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.group:hover .group-hover\:scale-110{--tw-scale-x:1.1;--tw-scale-y:1.1}.peer:checked~.peer-checked\:border-gold{--tw-border-opacity:1;border-color:rgb(201 162 75/var(--tw-border-opacity,1))}.peer:checked~.peer-checked\:bg-gold\/10{background-color:rgba(201,162,75,.1)}.peer:focus-visible~.peer-focus-visible\:ring-4{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.peer:focus-visible~.peer-focus-visible\:ring-gold\/40{--tw-ring-color:rgba(201,162,75,.4)}@media (prefers-reduced-motion:reduce){.motion-reduce\:transition-none{transition-property:none}}@media (min-width:640px){.sm\:inline-flex{display:inline-flex}.sm\:w-auto{width:auto}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm\:flex-row{flex-direction:row}.sm\:justify-start{justify-content:flex-start}.sm\:p-10{padding:2.5rem}.sm\:p-8{padding:2rem}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}.sm\:py-14{padding-top:3.5rem;padding-bottom:3.5rem}.sm\:py-16{padding-top:4rem;padding-bottom:4rem}.sm\:text-left{text-align:left}.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}.sm\:text-4xl{font-size:2.25rem;line-height:2.5rem}.sm\:text-5xl{font-size:3rem;line-height:1}.sm\:text-base{font-size:1rem;line-height:1.5rem}.sm\:text-lg{font-size:1.125rem;line-height:1.75rem}.sm\:text-xl{font-size:1.25rem;line-height:1.75rem}}@media (min-width:768px){.md\:hidden{display:none}.md\:grid-cols-\[1\.3fr_1fr\]{grid-template-columns:1.3fr 1fr}.md\:pb-0{padding-bottom:0}}@media (min-width:1024px){.lg\:flex{display:flex}.lg\:hidden{display:none}.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg\:grid-cols-\[1fr_1\.1fr\]{grid-template-columns:1fr 1.1fr}.lg\:gap-14{gap:3.5rem}.lg\:px-8{padding-left:2rem;padding-right:2rem}.lg\:py-20{padding-top:5rem;padding-bottom:5rem}.lg\:py-24{padding-top:6rem;padding-bottom:6rem}.lg\:text-6xl{font-size:3.75rem;line-height:1}}</style>
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":["HairSalon","LocalBusiness"],"name":"Infinity Barber","description":"Barbería en Castro Urdiales: cortes de pelo, degradados, arreglo y perfilado de barba, tratamientos capilares y peinados.","telephone":"+34942001122","email":"contacto@infinitybarber.es","priceRange":"€€","address":{"@type":"PostalAddress","streetAddress":"Calle Victorina Gaínza, 4","addressLocality":"Castro Urdiales","addressRegion":"Cantabria","postalCode":"39700","addressCountry":"ES"},"hasMap":"https://www.google.com/maps/search/?api=1&query=Calle+Victorina+Gainza+4+Castro+Urdiales","openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"10:00","closes":"14:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"16:30","closes":"20:30"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Saturday","opens":"09:00","closes":"14:00"}],"areaServed":{"@type":"City","name":"Castro Urdiales"}}
+</script>
 </head>
-
-<body class="bg-ink pb-20 font-sans text-bone antialiased md:pb-0">
-  <a href="#servicios" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-gold focus:px-4 focus:py-2 focus:text-ink">Saltar al contenido</a>
-
-  <!-- HEADER -->
-  <header class="sticky top-0 z-50 border-b border-line bg-ink/90 backdrop-blur">
-    <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-      <a href="#inicio" class="flex items-center gap-2" aria-label="Infinity Barber, ir al inicio">
-        <i data-lucide="infinity" class="h-7 w-7 text-gold" aria-hidden="true"></i>
-        <span class="logo-text font-display text-xl font-bold uppercase leading-none tracking-[0.18em] sm:text-2xl">Infinity Barber</span>
-      </a>
-
-      <nav aria-label="Principal" class="hidden items-center gap-1 lg:flex">
-        <a href="#inicio" class="rounded-full px-4 py-2 text-sm font-medium text-mute transition hover:text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">Inicio</a>
-        <a href="#servicios" class="rounded-full px-4 py-2 text-sm font-medium text-mute transition hover:text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">Servicios</a>
-        <a href="#horario" class="rounded-full px-4 py-2 text-sm font-medium text-mute transition hover:text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">Horario</a>
-        <a href="#ubicacion" class="rounded-full px-4 py-2 text-sm font-medium text-mute transition hover:text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">Ubicación</a>
-        <a href="#reservas" class="rounded-full px-4 py-2 text-sm font-medium text-mute transition hover:text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">Reservas</a>
-      </nav>
-
-      <div class="flex items-center gap-2">
-        <a href="#reservas" data-cta="reservar_header"
-           class="hidden min-h-[44px] items-center rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink shadow transition hover:bg-gold-light focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 sm:inline-flex">
-          Reservar Cita
-        </a>
-        <button id="menu-btn" type="button" aria-expanded="false" aria-controls="menu-movil" aria-label="Abrir menú"
-                class="flex h-11 w-11 items-center justify-center rounded-full border border-line transition hover:border-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold lg:hidden">
-          <i data-lucide="menu" class="h-6 w-6" aria-hidden="true"></i>
-        </button>
-      </div>
-    </div>
-
-    <nav id="menu-movil" aria-label="Menú móvil" class="hidden border-t border-line bg-ink lg:hidden">
-      <ul class="mx-auto max-w-6xl space-y-1 px-4 py-3">
-        <li><a href="#inicio" class="block rounded-xl px-4 py-3 font-medium hover:bg-coal hover:text-gold">Inicio</a></li>
-        <li><a href="#servicios" class="block rounded-xl px-4 py-3 font-medium hover:bg-coal hover:text-gold">Servicios</a></li>
-        <li><a href="#horario" class="block rounded-xl px-4 py-3 font-medium hover:bg-coal hover:text-gold">Horario</a></li>
-        <li><a href="#ubicacion" class="block rounded-xl px-4 py-3 font-medium hover:bg-coal hover:text-gold">Ubicación</a></li>
-        <li><a href="#reservas" class="mt-2 block rounded-full bg-gold px-4 py-3 text-center font-semibold text-ink">Reservar Cita</a></li>
-      </ul>
-    </nav>
-  </header>
-
-  <main>
-    <!-- HERO -->
-    <section id="inicio" class="relative isolate overflow-hidden bg-gradient-to-br from-coal via-ink to-black">
-      <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1600&q=70"
-           alt="Interior de una barbería urbana con sillón de barbero" width="1600" height="1067" fetchpriority="high"
-           class="absolute inset-0 -z-20 h-full w-full object-cover" onerror="this.style.display='none'">
-      <div class="absolute inset-0 -z-10 bg-gradient-to-b from-ink/80 via-ink/70 to-ink" aria-hidden="true"></div>
-
-      <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36">
-        <div class="max-w-3xl space-y-6">
-          <span data-estado class="inline-flex items-center gap-2 rounded-full border border-line bg-coal/80 px-3 py-1.5 text-xs font-semibold" role="status" aria-live="polite">
-            <span data-estado-punto class="h-2.5 w-2.5 rounded-full bg-gray-500"></span>
-            <span data-estado-texto>Comprobando…</span>
-          </span>
-          <h1 class="font-display text-4xl font-bold uppercase leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-            Estilo sin límites en <span class="logo-text">Castro Urdiales</span>
-          </h1>
-          <p class="max-w-xl text-base leading-relaxed text-mute sm:text-lg">
-            Cortes, degradados y barba con precisión y buen ambiente. Reserva tu cita en un minuto.
-          </p>
-          <div class="flex flex-col gap-3 pt-2 sm:flex-row">
-            <a href="https://wa.me/34611223344?text=Hola%2C%20quiero%20reservar%20cita%20en%20Infinity%20Barber" target="_blank" rel="noopener" data-cta="whatsapp_hero"
-               class="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-gold px-7 py-3.5 text-base font-semibold text-ink shadow-lg transition hover:bg-gold-light active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none sm:w-auto">
-              <i data-lucide="message-circle" class="h-5 w-5" aria-hidden="true"></i> Reservar por WhatsApp
-            </a>
-            <a href="tel:+34942001122" data-cta="llamar_hero"
-               class="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border-2 border-bone/70 px-7 py-3.5 text-base font-semibold transition hover:border-gold hover:text-gold focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none sm:w-auto">
-              <i data-lucide="phone" class="h-5 w-5" aria-hidden="true"></i> Llamar ahora
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SERVICIOS -->
-    <section id="servicios" class="py-16 sm:py-20 lg:py-28">
-      <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div class="reveal mx-auto max-w-2xl text-center">
-          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-gold">Servicios y precios</p>
-          <h2 class="mt-3 font-display text-3xl font-semibold uppercase tracking-tight sm:text-4xl">Todo lo que tu imagen necesita</h2>
-          <p class="mt-3 text-mute">Precios orientativos con IVA incluido. Consulta cualquier duda al reservar.</p>
-        </div>
-
-        <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <article class="reveal group rounded-card border border-line bg-card p-6 transition hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl hover:shadow-gold/5 motion-reduce:transition-none">
-            <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 text-gold"><i data-lucide="scissors" class="h-6 w-6" aria-hidden="true"></i></div>
-            <h3 class="text-lg font-semibold">Corte tradicional / moderno</h3>
-            <p class="mt-2 text-sm leading-relaxed text-mute">Corte a tijera o máquina, adaptado a tu rostro y a tu estilo.</p>
-            <p class="mt-5 font-display text-3xl font-semibold text-gold">14 €</p>
-          </article>
-
-          <article class="reveal group rounded-card border border-line bg-card p-6 transition hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl hover:shadow-gold/5 motion-reduce:transition-none">
-            <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 text-gold"><i data-lucide="zap" class="h-6 w-6" aria-hidden="true"></i></div>
-            <h3 class="text-lg font-semibold">Degradado / Fade</h3>
-            <p class="mt-2 text-sm leading-relaxed text-mute">Degradados limpios (low, mid o high fade) con acabado perfecto.</p>
-            <p class="mt-5 font-display text-3xl font-semibold text-gold">15 €</p>
-          </article>
-
-          <article class="reveal group rounded-card border border-line bg-card p-6 transition hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl hover:shadow-gold/5 motion-reduce:transition-none">
-            <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 text-gold"><i data-lucide="user" class="h-6 w-6" aria-hidden="true"></i></div>
-            <h3 class="text-lg font-semibold">Arreglo y perfilado de barba</h3>
-            <p class="mt-2 text-sm leading-relaxed text-mute">Perfilado con navaja, toalla caliente y acabado hidratante.</p>
-            <p class="mt-5 font-display text-3xl font-semibold text-gold">10 €</p>
-          </article>
-
-          <article class="reveal group relative rounded-card border border-gold/60 bg-card p-6 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-gold/10 motion-reduce:transition-none sm:col-span-2 lg:col-span-1">
-            <span class="absolute right-4 top-4 rounded-full bg-gold px-3 py-1 text-xs font-bold uppercase tracking-wide text-ink">Más pedido</span>
-            <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 text-gold"><i data-lucide="crown" class="h-6 w-6" aria-hidden="true"></i></div>
-            <h3 class="text-lg font-semibold">Combo corte + barba</h3>
-            <p class="mt-2 text-sm leading-relaxed text-mute">El servicio completo: corte a tu gusto y barba perfilada.</p>
-            <p class="mt-5 font-display text-3xl font-semibold text-gold">22 €</p>
-          </article>
-
-          <article class="reveal group rounded-card border border-line bg-card p-6 transition hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl hover:shadow-gold/5 motion-reduce:transition-none sm:col-span-2 lg:col-span-2">
-            <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 text-gold"><i data-lucide="sparkles" class="h-6 w-6" aria-hidden="true"></i></div>
-            <h3 class="text-lg font-semibold">Tratamiento capilar y peinado</h3>
-            <p class="mt-2 max-w-xl text-sm leading-relaxed text-mute">Cuidado del cuero cabelludo y del cabello, con peinado y fijación para eventos o el día a día.</p>
-            <p class="mt-5 font-display text-3xl font-semibold text-gold"><span class="mr-1 text-base font-normal text-mute">desde</span>18 €</p>
-          </article>
-        </div>
-
-        <div class="reveal mt-10 text-center">
-          <a href="#reservas" data-cta="reservar_servicios"
-             class="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-gold px-7 py-3 font-semibold text-ink transition hover:bg-gold-light focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40">
-            Reservar mi cita <i data-lucide="arrow-right" class="h-5 w-5" aria-hidden="true"></i>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- RESERVAS -->
-    <section id="reservas" class="pb-16 sm:pb-20 lg:pb-28">
-      <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div class="reveal relative overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-coal to-card p-6 shadow-2xl shadow-gold/5 sm:p-10 lg:p-14">
-          <i data-lucide="infinity" class="pointer-events-none absolute -right-8 -top-8 h-48 w-48 text-gold/5" aria-hidden="true"></i>
-          <div class="relative grid gap-10 lg:grid-cols-2 lg:items-center">
-            <div class="space-y-4">
-              <p class="text-xs font-semibold uppercase tracking-[0.25em] text-gold">Reservas</p>
-              <h2 class="font-display text-3xl font-semibold uppercase leading-tight sm:text-4xl">Reserva tu cita en menos de un minuto</h2>
-              <ol class="space-y-3 pt-2 text-mute">
-                <li class="flex items-start gap-3"><span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-gold font-bold text-ink">1</span> Escríbenos por WhatsApp o llámanos.</li>
-                <li class="flex items-start gap-3"><span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-gold font-bold text-ink">2</span> Dinos el servicio y el día que prefieres.</li>
-                <li class="flex items-start gap-3"><span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-gold font-bold text-ink">3</span> Te confirmamos la hora disponible.</li>
-              </ol>
-            </div>
-            <div class="space-y-3">
-              <a href="https://wa.me/34611223344?text=Hola%2C%20quiero%20reservar%20cita%20en%20Infinity%20Barber" target="_blank" rel="noopener" data-cta="whatsapp_reservas"
-                 class="flex min-h-[56px] items-center justify-center gap-3 rounded-2xl bg-gold px-6 py-4 text-lg font-semibold text-ink shadow-lg transition hover:bg-gold-light active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none">
-                <i data-lucide="message-circle" class="h-6 w-6" aria-hidden="true"></i> WhatsApp · 611 22 33 44
-              </a>
-              <a href="tel:+34942001122" data-cta="llamar_reservas"
-                 class="flex min-h-[56px] items-center justify-center gap-3 rounded-2xl border-2 border-gold px-6 py-4 text-lg font-semibold text-gold transition hover:bg-gold hover:text-ink focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none">
-                <i data-lucide="phone" class="h-6 w-6" aria-hidden="true"></i> Llamar · 942 00 11 22
-              </a>
-              <p class="text-center text-sm text-mute">También puedes escribirnos a <a href="mailto:contacto@infinitybarber.es" class="text-gold underline underline-offset-2">contacto@infinitybarber.es</a></p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- GALERÍA -->
-    <section id="galeria" class="bg-coal py-16 sm:py-20 lg:py-28">
-      <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div class="reveal mx-auto max-w-2xl text-center">
-          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-gold">Galería</p>
-          <h2 class="mt-3 font-display text-3xl font-semibold uppercase tracking-tight sm:text-4xl">Nuestros trabajos</h2>
-          <p class="mt-3 text-mute">Mira nuestros últimos cortes y síguenos en Instagram.</p>
-        </div>
-
-        <div class="reveal mt-10 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
-          <figure class="relative aspect-square overflow-hidden rounded-card bg-gradient-to-br from-card to-line">
-            <img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=600&h=600&q=70" alt="Barbero realizando un degradado" width="600" height="600" loading="lazy" class="h-full w-full object-cover transition duration-500 hover:scale-105 motion-reduce:transition-none" onerror="this.style.display='none'">
-          </figure>
-          <figure class="relative aspect-square overflow-hidden rounded-card bg-gradient-to-br from-card to-line">
-            <img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=600&h=600&q=70" alt="Corte de pelo moderno en barbería" width="600" height="600" loading="lazy" class="h-full w-full object-cover transition duration-500 hover:scale-105 motion-reduce:transition-none" onerror="this.style.display='none'">
-          </figure>
-          <figure class="relative aspect-square overflow-hidden rounded-card bg-gradient-to-br from-card to-line">
-            <img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=600&h=600&q=70" alt="Perfilado de barba con navaja" width="600" height="600" loading="lazy" class="h-full w-full object-cover transition duration-500 hover:scale-105 motion-reduce:transition-none" onerror="this.style.display='none'">
-          </figure>
-          <figure class="relative aspect-square overflow-hidden rounded-card bg-gradient-to-br from-card to-line">
-            <img src="https://images.unsplash.com/photo-1605497788044-5a32c7078486?auto=format&fit=crop&w=600&h=600&q=70" alt="Cliente en el sillón de la barbería" width="600" height="600" loading="lazy" class="h-full w-full object-cover transition duration-500 hover:scale-105 motion-reduce:transition-none" onerror="this.style.display='none'">
-          </figure>
-          <figure class="relative aspect-square overflow-hidden rounded-card bg-gradient-to-br from-card to-line">
-            <img src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=600&h=600&q=70" alt="Detalle de herramientas de barbero" width="600" height="600" loading="lazy" class="h-full w-full object-cover transition duration-500 hover:scale-105 motion-reduce:transition-none" onerror="this.style.display='none'">
-          </figure>
-          <figure class="relative aspect-square overflow-hidden rounded-card bg-gradient-to-br from-card to-line">
-            <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=600&h=600&q=70" alt="Ambiente de la barbería Infinity Barber" width="600" height="600" loading="lazy" class="h-full w-full object-cover transition duration-500 hover:scale-105 motion-reduce:transition-none" onerror="this.style.display='none'">
-          </figure>
-        </div>
-
-        <div class="reveal mt-10 text-center">
-          <a href="https://instagram.com/infinitybarber_castro" target="_blank" rel="noopener" data-cta="instagram"
-             class="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border-2 border-gold px-7 py-3 font-semibold text-gold transition hover:bg-gold hover:text-ink focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none">
-            <i data-lucide="instagram" class="h-5 w-5" aria-hidden="true"></i> Síguenos @infinitybarber_castro
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- HORARIO Y UBICACIÓN -->
-    <section id="horario" class="py-16 sm:py-20 lg:py-28">
-      <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div class="reveal mx-auto max-w-2xl text-center">
-          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-gold">Horario y ubicación</p>
-          <h2 id="ubicacion" class="mt-3 scroll-mt-24 font-display text-3xl font-semibold uppercase tracking-tight sm:text-4xl">Ven a vernos</h2>
-        </div>
-
-        <div class="mt-12 grid gap-6 lg:grid-cols-2">
-          <div class="space-y-6">
-            <article class="reveal rounded-card border border-line bg-card p-6 sm:p-8">
-              <h3 class="flex items-center gap-2 text-lg font-semibold"><i data-lucide="clock" class="h-5 w-5 text-gold" aria-hidden="true"></i> Horario</h3>
-              <p class="mt-1 text-sm font-semibold" data-estado-linea></p>
-              <table class="mt-4 w-full text-left text-sm sm:text-base">
-                <caption class="sr-only">Horario de apertura</caption>
-                <tbody class="divide-y divide-line">
-                  <tr data-dia="1"><th scope="row" class="py-3 pr-4 font-medium">Lunes</th><td class="py-3 text-mute">10:00 – 14:00 · 16:30 – 20:30</td></tr>
-                  <tr data-dia="2"><th scope="row" class="py-3 pr-4 font-medium">Martes</th><td class="py-3 text-mute">10:00 – 14:00 · 16:30 – 20:30</td></tr>
-                  <tr data-dia="3"><th scope="row" class="py-3 pr-4 font-medium">Miércoles</th><td class="py-3 text-mute">10:00 – 14:00 · 16:30 – 20:30</td></tr>
-                  <tr data-dia="4"><th scope="row" class="py-3 pr-4 font-medium">Jueves</th><td class="py-3 text-mute">10:00 – 14:00 · 16:30 – 20:30</td></tr>
-                  <tr data-dia="5"><th scope="row" class="py-3 pr-4 font-medium">Viernes</th><td class="py-3 text-mute">10:00 – 14:00 · 16:30 – 20:30</td></tr>
-                  <tr data-dia="6"><th scope="row" class="py-3 pr-4 font-medium">Sábado</th><td class="py-3 text-mute">09:00 – 14:00</td></tr>
-                  <tr data-dia="0"><th scope="row" class="py-3 pr-4 font-medium">Domingo</th><td class="py-3 text-mute">Cerrado</td></tr>
-                </tbody>
-              </table>
-            </article>
-
-            <article class="reveal rounded-card border border-line bg-card p-6 sm:p-8">
-              <h3 class="flex items-center gap-2 text-lg font-semibold"><i data-lucide="map-pin" class="h-5 w-5 text-gold" aria-hidden="true"></i> Dirección</h3>
-              <address class="mt-3 not-italic leading-relaxed text-mute">Calle Victorina Gaínza, Nº 4<br>Castro Urdiales, Cantabria</address>
-              <a href="https://www.google.com/maps/dir/?api=1&destination=Calle+Victorina+Gainza+4+Castro+Urdiales" target="_blank" rel="noopener" data-cta="como_llegar"
-                 class="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-gold-light focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40">
-                <i data-lucide="navigation" class="h-4 w-4" aria-hidden="true"></i> Cómo llegar
-              </a>
-            </article>
-          </div>
-
-          <div class="reveal overflow-hidden rounded-card border border-line bg-card">
-            <iframe title="Mapa de Infinity Barber, Calle Victorina Gaínza 4, Castro Urdiales"
-                    src="https://www.google.com/maps?q=Calle+Victorina+Gainza+4,+Castro+Urdiales&output=embed"
-                    width="600" height="450" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-                    class="h-full min-h-[360px] w-full border-0 grayscale invert-[.9] contrast-[.9]"></iframe>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- FOOTER -->
-  <footer class="border-t border-line bg-black py-12">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-      <div class="grid gap-8 text-center sm:grid-cols-3 sm:text-left">
-        <div>
-          <p class="flex items-center justify-center gap-2 sm:justify-start">
-            <i data-lucide="infinity" class="h-6 w-6 text-gold" aria-hidden="true"></i>
-            <span class="logo-text font-display text-xl font-bold uppercase tracking-[0.18em]">Infinity Barber</span>
-          </p>
-          <p class="mt-3 text-sm text-mute">Barbería en Castro Urdiales. Estilo sin límites.</p>
-        </div>
-        <div class="space-y-1 text-sm text-mute">
-          <p class="font-semibold text-bone">Contacto</p>
-          <p>Calle Victorina Gaínza, 4, Castro Urdiales</p>
-          <p><a href="tel:+34942001122" class="hover:text-gold">+34 942 00 11 22</a></p>
-          <p><a href="mailto:contacto@infinitybarber.es" class="break-all hover:text-gold">contacto@infinitybarber.es</a></p>
-        </div>
-        <div>
-          <p class="text-sm font-semibold">Síguenos</p>
-          <div class="mt-3 flex justify-center gap-3 sm:justify-start">
-            <a href="https://instagram.com/infinitybarber_castro" target="_blank" rel="noopener" aria-label="Instagram de Infinity Barber"
-               class="flex h-11 w-11 items-center justify-center rounded-full border border-line transition hover:border-gold hover:text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"><i data-lucide="instagram" class="h-5 w-5" aria-hidden="true"></i></a>
-            <a href="https://wa.me/34611223344" target="_blank" rel="noopener" aria-label="WhatsApp de Infinity Barber"
-               class="flex h-11 w-11 items-center justify-center rounded-full border border-line transition hover:border-gold hover:text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"><i data-lucide="message-circle" class="h-5 w-5" aria-hidden="true"></i></a>
-            <a href="https://facebook.com/infinitybarber" target="_blank" rel="noopener" aria-label="Facebook de Infinity Barber"
-               class="flex h-11 w-11 items-center justify-center rounded-full border border-line transition hover:border-gold hover:text-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"><i data-lucide="facebook" class="h-5 w-5" aria-hidden="true"></i></a>
-          </div>
-        </div>
-      </div>
-      <div class="mt-10 flex flex-col items-center justify-between gap-3 border-t border-line pt-6 text-xs text-mute sm:flex-row">
-        <p>&copy; <span id="anio"></span> Infinity Barber. Todos los derechos reservados.</p>
-        <nav aria-label="Legal" class="flex flex-wrap justify-center gap-4">
-          <a href="#" class="hover:text-gold">Aviso legal</a>
-          <a href="#" class="hover:text-gold">Política de privacidad</a>
-          <a href="#" class="hover:text-gold">Cookies</a>
-        </nav>
-      </div>
-    </div>
-  </footer>
-
-  <!-- BARRA FIJA MÓVIL -->
-  <div class="fixed inset-x-0 bottom-0 z-50 flex gap-2 border-t border-line bg-ink/95 p-3 backdrop-blur md:hidden">
-    <a href="tel:+34942001122" data-cta="llamar_barra"
-       class="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full border-2 border-gold py-2.5 text-center font-semibold text-gold">
-      <i data-lucide="phone" class="h-5 w-5" aria-hidden="true"></i> Llamar
-    </a>
-    <a href="https://wa.me/34611223344?text=Hola%2C%20quiero%20reservar%20cita%20en%20Infinity%20Barber" target="_blank" rel="noopener" data-cta="whatsapp_barra"
-       class="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full bg-gold py-2.5 text-center font-semibold text-ink">
-      <i data-lucide="message-circle" class="h-5 w-5" aria-hidden="true"></i> Reservar
-    </a>
-  </div>
-
-  <script>
-    (function () {
-      "use strict";
-
-      /* ---------- HORARIO (minutos desde las 00:00) ---------- */
-      var LV = [[600, 840], [990, 1230]];
-      var SLOTS = { 0: [], 1: LV, 2: LV, 3: LV, 4: LV, 5: LV, 6: [[540, 840]] };
-      var DIAS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      var DIAS_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
-
-      function hhmm(m) {
-        return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
-      }
-
-      function ahora() {
-        var partes = new Intl.DateTimeFormat("en-GB", {
-          timeZone: "Europe/Madrid", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false
-        }).formatToParts(new Date());
-        var v = {};
-        partes.forEach(function (p) { v[p.type] = p.value; });
-        return { dia: DIAS_EN.indexOf(v.weekday), min: (parseInt(v.hour, 10) % 24) * 60 + parseInt(v.minute, 10) };
-      }
-
-      function calcularEstado() {
-        var a = ahora(), i, j, s, sl, cuando;
-        sl = SLOTS[a.dia];
-        for (j = 0; j < sl.length; j++) {
-          s = sl[j];
-          if (a.min >= s[0] && a.min < s[1]) {
-            return { abierto: true, texto: "Abierto ahora", detalle: "Abierto ahora · cierra a las " + hhmm(s[1]) };
-          }
-        }
-        for (i = 0; i < 7; i++) {
-          var d = (a.dia + i) % 7;
-          sl = SLOTS[d];
-          for (j = 0; j < sl.length; j++) {
-            s = sl[j];
-            if (i > 0 || s[0] > a.min) {
-              cuando = i === 0 ? "hoy" : (i === 1 ? "mañana" : "el " + DIAS_ES[d]);
-              return { abierto: false, texto: "Cerrado", detalle: "Cerrado · abre " + cuando + " a las " + hhmm(s[0]) };
-            }
-          }
-        }
-        return { abierto: false, texto: "Cerrado", detalle: "Cerrado" };
-      }
-
-      function actualizar() {
-        var e = calcularEstado(), a = ahora();
-        document.querySelectorAll("[data-estado]").forEach(function (el) {
-          el.querySelector("[data-estado-texto]").textContent = e.texto;
-          el.querySelector("[data-estado-punto]").className = "h-2.5 w-2.5 rounded-full " + (e.abierto ? "bg-green-500 animate-pulse motion-reduce:animate-none" : "bg-red-500");
-          el.title = e.detalle;
-        });
-        document.querySelectorAll("[data-estado-linea]").forEach(function (el) {
-          el.textContent = e.detalle;
-          el.className = "mt-1 text-sm font-semibold " + (e.abierto ? "text-green-400" : "text-red-400");
-        });
-        document.querySelectorAll("tr[data-dia]").forEach(function (tr) {
-          var hoy = parseInt(tr.dataset.dia, 10) === a.dia;
-          tr.classList.toggle("text-gold", hoy);
-          tr.querySelector("th").classList.toggle("text-gold", hoy);
-          tr.querySelector("td").classList.toggle("text-gold", hoy);
-          tr.querySelector("td").classList.toggle("text-mute", !hoy);
-        });
-      }
-
-      /* ---------- MENÚ MÓVIL ---------- */
-      var btn = document.getElementById("menu-btn");
-      var menu = document.getElementById("menu-movil");
-      function cerrar() {
-        menu.classList.add("hidden");
-        btn.setAttribute("aria-expanded", "false");
-        btn.setAttribute("aria-label", "Abrir menú");
-      }
-      btn.addEventListener("click", function () {
-        if (btn.getAttribute("aria-expanded") === "true") { cerrar(); return; }
-        menu.classList.remove("hidden");
-        btn.setAttribute("aria-expanded", "true");
-        btn.setAttribute("aria-label", "Cerrar menú");
-      });
-      menu.querySelectorAll("a").forEach(function (a) { a.addEventListener("click", cerrar); });
-      document.addEventListener("keydown", function (e) { if (e.key === "Escape") cerrar(); });
-
-      /* ---------- ANIMACIÓN DE ENTRADA ---------- */
-      var items = document.querySelectorAll(".reveal");
-      if ("IntersectionObserver" in window) {
-        var io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (en) {
-            if (en.isIntersecting) { en.target.classList.add("is-visible"); io.unobserve(en.target); }
-          });
-        }, { threshold: 0.12 });
-        items.forEach(function (el) { io.observe(el); });
-      } else {
-        items.forEach(function (el) { el.classList.add("is-visible"); });
-      }
-
-      /* ---------- ANALÍTICA DE CTAs (opcional) ---------- */
-      document.querySelectorAll("[data-cta]").forEach(function (el) {
-        el.addEventListener("click", function () {
-          if (typeof window.gtag === "function") {
-            window.gtag("event", "cta_click", { cta: el.dataset.cta, pagina: location.pathname });
-          }
-        });
-      });
-
-      /* ---------- INICIO ---------- */
-      document.getElementById("anio").textContent = new Date().getFullYear();
-      actualizar();
-      setInterval(actualizar, 60000);
-      window.addEventListener("load", function () { if (window.lucide) window.lucide.createIcons(); });
-    })();
-  </script>
+<body class="bg-ink pb-24 font-sans text-bone antialiased md:pb-0">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-infinity" viewBox="0 0 24 24"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z"></path></symbol><symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></symbol><symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"></circle><path d="M8.12 8.12 12 12"></path><path d="M20 4 8.12 15.88"></path><circle cx="6" cy="18" r="3"></circle><path d="M14.8 14.8 20 20"></path></symbol><symbol id="i-whatsapp" viewBox="0 0 448 512"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></symbol><symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></symbol><symbol id="i-navigation" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></symbol><symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></symbol><symbol id="i-instagram" viewBox="0 0 448 512"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"></path></symbol><symbol id="i-facebook" viewBox="0 0 320 512"><path d="M80 299.3V512H196V299.3h86.5l18-97.8H196V166.9c0-51.7 20.3-71.5 72.7-71.5c16.3 0 29.4 .4 37 1.2V7.9C291.4 4 256.4 0 236.2 0C129.3 0 80 50.5 80 159.4v42.1H14v97.8H80z"></path></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></symbol></defs></svg>
+<a href="#servicios" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-gold focus:px-4 focus:py-2 focus:text-ink">Saltar a los servicios</a>
+<header class="sticky top-0 z-50 border-b border-line bg-ink/90 backdrop-blur">
+<div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+<a href="#inicio" class="flex items-center gap-2" aria-label="Infinity Barber, inicio"><svg class="ic h-7 w-7 text-gold" aria-hidden="true" focusable="false"><use href="#i-infinity"/></svg><span class="text-gold-grad whitespace-nowrap text-lg font-black uppercase tracking-[0.16em] sm:text-xl">Infinity Barber</span></a>
+<nav aria-label="Principal" class="hidden items-center gap-1 lg:flex">
+<a href="#inicio" class="rounded-full px-3 py-2 text-sm font-semibold text-mute transition hover:text-gold-light">Inicio</a>
+<a href="#servicios" class="rounded-full px-3 py-2 text-sm font-semibold text-mute transition hover:text-gold-light">Servicios</a>
+<a href="#horario" class="rounded-full px-3 py-2 text-sm font-semibold text-mute transition hover:text-gold-light">Horario</a>
+<a href="#ubicacion" class="rounded-full px-3 py-2 text-sm font-semibold text-mute transition hover:text-gold-light">Ubicación</a>
+<a href="#reservas" class="rounded-full px-3 py-2 text-sm font-semibold text-mute transition hover:text-gold-light">Reservas</a>
+</nav>
+<div class="flex items-center gap-2">
+<span data-estado class="estado hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold sm:inline-flex" role="status" aria-live="polite"><span class="estado-punto"></span><span data-estado-texto>Comprobando…</span></span>
+<a href="#reservas" data-cta="reservar_header" class="btn-gold hidden min-h-[44px] items-center rounded-full px-5 text-sm sm:inline-flex">Reservar Cita</a>
+<button id="menu-btn" type="button" aria-expanded="false" aria-controls="menu-movil" aria-label="Abrir menú" class="flex h-11 w-11 items-center justify-center rounded-full border border-line hover:border-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold lg:hidden"><svg class="ic h-6 w-6" aria-hidden="true" focusable="false"><use href="#i-menu"/></svg></button>
+</div>
+</div>
+<nav id="menu-movil" aria-label="Menú móvil" class="hidden border-t border-line bg-ink lg:hidden">
+<ul class="mx-auto max-w-6xl space-y-1 px-4 py-3">
+<li><a href="#inicio" class="block rounded-xl px-4 py-3 font-semibold hover:bg-coal">Inicio</a></li>
+<li><a href="#servicios" class="block rounded-xl px-4 py-3 font-semibold hover:bg-coal">Servicios</a></li>
+<li><a href="#horario" class="block rounded-xl px-4 py-3 font-semibold hover:bg-coal">Horario</a></li>
+<li><a href="#ubicacion" class="block rounded-xl px-4 py-3 font-semibold hover:bg-coal">Ubicación</a></li>
+<li><a href="#reservas" class="btn-gold mt-2 block rounded-full px-4 py-3 text-center">Reservar Cita</a></li>
+</ul>
+</nav>
+</header>
+<main>
+<section id="inicio" class="relative isolate overflow-hidden bg-gradient-to-b from-coal to-ink">
+<div class="grid-bg absolute inset-0 -z-20" aria-hidden="true"></div>
+<div class="absolute -right-32 top-0 -z-10 h-[30rem] w-[30rem] rounded-full bg-gold/15 blur-3xl" aria-hidden="true"></div>
+<div class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.3fr_1fr] lg:px-8 lg:py-24">
+<div class="space-y-6">
+<p class="inline-flex items-center gap-2 rounded-full border border-gold/50 bg-gold/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-gold-light"><svg class="ic h-3.5 w-3.5" aria-hidden="true" focusable="false"><use href="#i-scissors"/></svg> Barbería en Castro Urdiales</p>
+<h1 class="text-4xl font-black uppercase leading-[1.02] sm:text-5xl lg:text-6xl">Estilo sin límites en <span class="text-gold-grad">Castro Urdiales</span></h1>
+<p class="max-w-xl text-base leading-relaxed text-mute sm:text-lg">Cortes, degradados y barba con precisión y buen ambiente. Reserva tu cita en menos de un minuto.</p>
+<div class="flex flex-col gap-3 sm:flex-row">
+<a href="https://wa.me/34611223344?text=Hola%2C%20quiero%20reservar%20cita%20en%20Infinity%20Barber" target="_blank" rel="noopener" data-cta="whatsapp_hero" class="btn-gold inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-7 text-base transition active:scale-[0.98] focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none sm:w-auto"><svg class="icf h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-whatsapp"/></svg> Reservar por WhatsApp</a>
+<a href="tel:+34942001122" data-cta="llamar_hero" class="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 border-bone/60 px-7 text-base font-bold transition hover:border-gold hover:text-gold-light focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none sm:w-auto"><svg class="ic h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-phone"/></svg> Llamar ahora</a>
+</div>
+<ul class="flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-mute">
+<li class="flex items-center gap-2"><svg class="ic h-4 w-4 text-gold" aria-hidden="true" focusable="false"><use href="#i-clock"/></svg> Lun–Vie 10–14 y 16:30–20:30</li>
+<li class="flex items-center gap-2"><svg class="ic h-4 w-4 text-gold" aria-hidden="true" focusable="false"><use href="#i-clock"/></svg> Sábados 9–14</li>
+</ul>
+</div>
+<div class="float mx-auto flex flex-col items-center" aria-hidden="true"><div class="pole-cap"></div><div class="pole"></div><div class="pole-cap"></div></div>
+</div>
+</section>
+<section id="servicios" class="py-14 sm:py-16 lg:py-20">
+<div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+<div class="reveal mx-auto max-w-2xl text-center"><p class="text-xs font-bold uppercase tracking-[0.25em] text-gold">Servicios y precios</p><h2 class="mt-3 text-3xl font-black uppercase sm:text-4xl">Todo para tu imagen</h2><p class="mt-3 text-mute">Precios con IVA incluido. Pulsa <strong class="text-bone">Elegir</strong> y reserva en un momento.</p></div>
+<div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+<article class="svc reveal group flex flex-col rounded-3xl border border-line bg-card p-6 transition hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl hover:shadow-gold/10 motion-reduce:transition-none">
+<div class="mb-4 h-16 w-16 rounded-2xl bg-gold/10 p-2.5"><svg viewBox="0 0 64 64" class="bi" aria-hidden="true" focusable="false"><g class="bl-a"><path d="M32 32 L52 8" stroke="#E6C57A" stroke-width="4.5" stroke-linecap="round"/><path d="M32 32 L19 45" stroke="#C9A24B" stroke-width="4" stroke-linecap="round"/><circle cx="15" cy="50" r="7" fill="none" stroke="#C9A24B" stroke-width="4"/></g><g class="bl-b"><path d="M32 32 L12 8" stroke="#E6C57A" stroke-width="4.5" stroke-linecap="round"/><path d="M32 32 L45 45" stroke="#C9A24B" stroke-width="4" stroke-linecap="round"/><circle cx="49" cy="50" r="7" fill="none" stroke="#C9A24B" stroke-width="4"/></g><circle cx="32" cy="32" r="3.2" fill="#F5F1E8"/></svg></div>
+<h3 class="text-lg font-extrabold leading-snug">Corte de pelo tradicional / moderno</h3>
+<p class="mt-2 flex-1 text-sm leading-relaxed text-mute">Corte a tijera o a máquina, adaptado a tu rostro y a tu estilo.</p>
+<div class="mt-5 flex items-center justify-between gap-3"><p class="text-3xl font-black text-gold-light">14 €</p>
+<button type="button" data-elegir="corte" class="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-gold/60 px-4 text-sm font-bold text-gold-light transition hover:bg-gold hover:text-ink focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none">Elegir <svg class="ic h-4 w-4" aria-hidden="true" focusable="false"><use href="#i-arrow-right"/></svg></button></div>
+</article><article class="svc reveal group flex flex-col rounded-3xl border border-line bg-card p-6 transition hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl hover:shadow-gold/10 motion-reduce:transition-none">
+<div class="mb-4 h-16 w-16 rounded-2xl bg-gold/10 p-2.5"><svg viewBox="0 0 64 64" class="bi" aria-hidden="true" focusable="false"><rect class="fbar" x="6.0" y="12.0" width="7" height="44.0" rx="3.5" fill="#C9A24B" fill-opacity="1.00" style="animation-delay:0.0s"/><rect class="fbar" x="15.5" y="18.5" width="7" height="37.5" rx="3.5" fill="#C9A24B" fill-opacity="0.86" style="animation-delay:0.18s"/><rect class="fbar" x="25.0" y="25.0" width="7" height="31.0" rx="3.5" fill="#C9A24B" fill-opacity="0.72" style="animation-delay:0.36s"/><rect class="fbar" x="34.5" y="31.5" width="7" height="24.5" rx="3.5" fill="#C9A24B" fill-opacity="0.58" style="animation-delay:0.54s"/><rect class="fbar" x="44.0" y="38.0" width="7" height="18.0" rx="3.5" fill="#C9A24B" fill-opacity="0.44" style="animation-delay:0.72s"/><rect class="fbar" x="53.5" y="44.5" width="7" height="11.5" rx="3.5" fill="#C9A24B" fill-opacity="0.30" style="animation-delay:0.8999999999999999s"/></svg></div>
+<h3 class="text-lg font-extrabold leading-snug">Degradado / Fade</h3>
+<p class="mt-2 flex-1 text-sm leading-relaxed text-mute">Low, mid o high fade con un acabado limpio.</p>
+<div class="mt-5 flex items-center justify-between gap-3"><p class="text-3xl font-black text-gold-light">15 €</p>
+<button type="button" data-elegir="fade" class="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-gold/60 px-4 text-sm font-bold text-gold-light transition hover:bg-gold hover:text-ink focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none">Elegir <svg class="ic h-4 w-4" aria-hidden="true" focusable="false"><use href="#i-arrow-right"/></svg></button></div>
+</article><article class="svc reveal group flex flex-col rounded-3xl border border-line bg-card p-6 transition hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl hover:shadow-gold/10 motion-reduce:transition-none">
+<div class="mb-4 h-16 w-16 rounded-2xl bg-gold/10 p-2.5"><svg viewBox="0 0 64 64" class="bi" aria-hidden="true" focusable="false"><rect x="6" y="38" width="30" height="11" rx="5" fill="#8A6A2A" transform="rotate(-8 20 44)"/><g class="rz"><path d="M30 38 L58 22 Q60 28 56 33 L33 46 Z" fill="#E7E5E0"/><path d="M30 38 L58 22" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g><circle cx="32" cy="42" r="3" fill="#C9A24B"/></svg></div>
+<h3 class="text-lg font-extrabold leading-snug">Arreglo y perfilado de barba</h3>
+<p class="mt-2 flex-1 text-sm leading-relaxed text-mute">Arreglo y perfilado de barba a tu medida.</p>
+<div class="mt-5 flex items-center justify-between gap-3"><p class="text-3xl font-black text-gold-light">10 €</p>
+<button type="button" data-elegir="barba" class="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-gold/60 px-4 text-sm font-bold text-gold-light transition hover:bg-gold hover:text-ink focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none">Elegir <svg class="ic h-4 w-4" aria-hidden="true" focusable="false"><use href="#i-arrow-right"/></svg></button></div>
+</article><article class="svc reveal group flex flex-col rounded-3xl border border-line bg-card p-6 transition hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl hover:shadow-gold/10 motion-reduce:transition-none">
+<div class="mb-4 h-16 w-16 rounded-2xl bg-gold/10 p-2.5"><svg viewBox="0 0 64 64" class="bi" aria-hidden="true" focusable="false"><path d="M10 44 L8 20 L22 30 L32 14 L42 30 L56 20 L54 44 Z" fill="#C9A24B" stroke="#E6C57A" stroke-width="3" stroke-linejoin="round"/><rect x="10" y="46" width="44" height="7" rx="3" fill="#E6C57A"/><circle cx="32" cy="12" r="3" fill="#F5F1E8" class="twinkle"/></svg></div>
+<h3 class="text-lg font-extrabold leading-snug">Combo corte + barba</h3>
+<p class="mt-2 flex-1 text-sm leading-relaxed text-mute">El servicio completo: corte y barba en una sola cita.</p>
+<div class="mt-5 flex items-center justify-between gap-3"><p class="text-3xl font-black text-gold-light">22 €</p>
+<button type="button" data-elegir="combo" class="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-gold/60 px-4 text-sm font-bold text-gold-light transition hover:bg-gold hover:text-ink focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none">Elegir <svg class="ic h-4 w-4" aria-hidden="true" focusable="false"><use href="#i-arrow-right"/></svg></button></div>
+</article><article class="svc reveal group flex flex-col rounded-3xl border border-line bg-card p-6 transition hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl hover:shadow-gold/10 motion-reduce:transition-none">
+<div class="mb-4 h-16 w-16 rounded-2xl bg-gold/10 p-2.5"><svg viewBox="0 0 64 64" class="bi" aria-hidden="true" focusable="false"><rect x="6" y="16" width="52" height="12" rx="5" fill="#E6C57A"/><rect class="tooth" x="9" y="28" width="3" height="20" rx="1.5" fill="#C9A24B" style="animation-delay:0.0s"/><rect class="tooth" x="14" y="28" width="3" height="20" rx="1.5" fill="#C9A24B" style="animation-delay:0.12s"/><rect class="tooth" x="19" y="28" width="3" height="20" rx="1.5" fill="#C9A24B" style="animation-delay:0.24s"/><rect class="tooth" x="24" y="28" width="3" height="20" rx="1.5" fill="#C9A24B" style="animation-delay:0.36s"/><rect class="tooth" x="29" y="28" width="3" height="20" rx="1.5" fill="#C9A24B" style="animation-delay:0.48s"/><rect class="tooth" x="34" y="28" width="3" height="20" rx="1.5" fill="#C9A24B" style="animation-delay:0.6s"/><rect class="tooth" x="39" y="28" width="3" height="20" rx="1.5" fill="#C9A24B" style="animation-delay:0.72s"/><rect class="tooth" x="44" y="28" width="3" height="20" rx="1.5" fill="#C9A24B" style="animation-delay:0.84s"/><rect class="tooth" x="49" y="28" width="3" height="20" rx="1.5" fill="#C9A24B" style="animation-delay:0.96s"/><rect class="tooth" x="54" y="28" width="3" height="20" rx="1.5" fill="#C9A24B" style="animation-delay:1.08s"/><path d="M52 6 l2 5 5 2 -5 2 -2 5 -2-5 -5-2 5-2z" fill="#F5F1E8" class="twinkle"/></svg></div>
+<h3 class="text-lg font-extrabold leading-snug">Tratamiento capilar y peinado</h3>
+<p class="mt-2 flex-1 text-sm leading-relaxed text-mute">Cuidado del cabello y peinado para el día a día o para ocasiones especiales.</p>
+<div class="mt-5 flex items-center justify-between gap-3"><p class="text-3xl font-black text-gold-light"><span class="text-sm font-normal text-mute">desde </span>18 €</p>
+<button type="button" data-elegir="trat" class="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-gold/60 px-4 text-sm font-bold text-gold-light transition hover:bg-gold hover:text-ink focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none">Elegir <svg class="ic h-4 w-4" aria-hidden="true" focusable="false"><use href="#i-arrow-right"/></svg></button></div>
+</article>
+<article class="reveal flex flex-col justify-between rounded-3xl border border-dashed border-gold/50 bg-gold/5 p-6">
+<div><div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gold/15 text-gold-light"><svg class="ic h-8 w-8" aria-hidden="true" focusable="false"><use href="#i-sparkles"/></svg></div>
+<h3 class="text-lg font-extrabold leading-snug">¿No sabes qué elegir?</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Escríbenos y te aconsejamos según tu cara, tu pelo y tu estilo.</p></div>
+<a href="https://wa.me/34611223344?text=Hola%2C%20no%20s%C3%A9%20qu%C3%A9%20servicio%20elegir.%20%C2%BFMe%20aconsej%C3%A1is%3F" target="_blank" rel="noopener" data-cta="whatsapp_consejo" class="btn-gold mt-5 inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full px-6 text-sm transition focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none"><svg class="icf h-4 w-4" aria-hidden="true" focusable="false"><use href="#i-whatsapp"/></svg> Pedir consejo</a>
+</article>
+</div>
+</div>
+</section>
+<section id="estilo" class="bg-coal py-14 sm:py-16 lg:py-20">
+<div class="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
+<div class="reveal space-y-5">
+<p class="text-xs font-bold uppercase tracking-[0.25em] text-gold">Guía de degradados</p>
+<h2 class="text-3xl font-black uppercase leading-tight sm:text-4xl">¿Qué fade te va?</h2>
+<p class="leading-relaxed text-mute">Prueba las tres alturas y mira cómo cambia el degradado. Si dudas, en la silla te aconsejamos según tu cara y tu pelo.</p>
+<div class="flex flex-wrap gap-2" role="group" aria-label="Altura del degradado">
+<button type="button" data-fade="low" aria-pressed="false" class="fade-btn min-h-[46px] rounded-full border border-line px-5 text-sm font-bold transition hover:border-gold motion-reduce:transition-none">Low fade</button>
+<button type="button" data-fade="mid" aria-pressed="true" class="fade-btn min-h-[46px] rounded-full border border-line px-5 text-sm font-bold transition hover:border-gold motion-reduce:transition-none">Mid fade</button>
+<button type="button" data-fade="high" aria-pressed="false" class="fade-btn min-h-[46px] rounded-full border border-line px-5 text-sm font-bold transition hover:border-gold motion-reduce:transition-none">High fade</button>
+</div>
+<div class="rounded-2xl border border-line bg-card p-5" aria-live="polite"><h3 id="fade-titulo" class="text-lg font-extrabold text-gold-light">Mid fade</h3><p id="fade-desc" class="mt-2 text-sm leading-relaxed text-mute"></p></div>
+<a id="fade-cta" href="#" target="_blank" rel="noopener" data-cta="whatsapp_fade" class="btn-gold inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 transition focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none"><svg class="ic h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-scissors"/></svg> Quiero este degradado</a>
+</div>
+<div class="reveal mx-auto aspect-square w-full max-w-sm rounded-3xl border border-line bg-gradient-to-b from-card to-ink p-6 shadow-2xl shadow-black/40"><svg viewBox="0 0 120 120" class="mx-auto h-full w-full" role="img" aria-label="Ilustración de un degradado en la cabeza">
+<defs>
+<linearGradient id="fadeG" gradientUnits="userSpaceOnUse" x1="0" y1="52" x2="0" y2="88"><stop offset="0" stop-color="#2A2420"/><stop offset="1" stop-color="#2A2420" stop-opacity="0"/></linearGradient>
+<filter id="soft" x="-20%" y="-5%" width="140%" height="110%"><feGaussianBlur stdDeviation="1.6"/></filter>
+<clipPath id="headClip"><ellipse cx="60" cy="66" rx="31" ry="40"/></clipPath>
+</defs>
+<ellipse cx="29" cy="70" rx="5" ry="9" fill="#C98F63"/><ellipse cx="91" cy="70" rx="5" ry="9" fill="#C98F63"/>
+<ellipse cx="60" cy="66" rx="31" ry="40" fill="#D9A27A"/>
+<g clip-path="url(#headClip)">
+<g filter="url(#soft)"><rect x="26" y="24" width="17" height="80" rx="8" fill="url(#fadeG)"/><rect x="77" y="24" width="17" height="80" rx="8" fill="url(#fadeG)"/></g>
+<path d="M28 52 Q30 20 60 20 Q90 20 92 52 Q84 38 60 36 Q36 38 28 52Z" fill="#2A2420"/>
+</g>
+<circle cx="50" cy="66" r="2.2" fill="#3A2A20"/><circle cx="70" cy="66" r="2.2" fill="#3A2A20"/>
+<path d="M54 84 q6 4 12 0" stroke="#A9744F" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg></div>
+</div>
+</section>
+<section id="reservas" class="py-14 sm:py-16 lg:py-20">
+<div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+<div class="reveal overflow-hidden rounded-3xl bg-gradient-to-br from-gold via-gold-dark to-gold/40 p-px shadow-2xl shadow-gold/10">
+<div class="rounded-[calc(1.5rem-1px)] bg-coal p-6 sm:p-10">
+<div class="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
+<div class="space-y-4">
+<p class="text-xs font-bold uppercase tracking-[0.25em] text-gold">Reservas</p>
+<h2 class="text-3xl font-black uppercase leading-tight sm:text-4xl">Reserva tu cita en un minuto</h2>
+<p class="text-mute">Elige servicio, día y hora, y te abrimos WhatsApp con todo escrito. Te confirmamos la disponibilidad enseguida.</p>
+<a href="tel:+34942001122" data-cta="llamar_reservas" class="inline-flex min-h-[48px] items-center gap-2 rounded-full border-2 border-gold px-6 font-bold text-gold-light transition hover:bg-gold hover:text-ink focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none"><svg class="ic h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-phone"/></svg> O llámanos: 942 00 11 22</a>
+<p class="text-sm text-mute">Prefieres escribir directamente: <a href="https://wa.me/34611223344" target="_blank" rel="noopener" class="whitespace-nowrap font-bold text-gold-light underline underline-offset-2">WhatsApp 611 22 33 44</a></p>
+</div>
+<form class="space-y-4" onsubmit="return false" aria-label="Reserva de cita">
+<fieldset><legend class="text-sm font-bold">Servicio</legend><div class="mt-2 space-y-2"><label class="block cursor-pointer"><input type="radio" name="servicio" value="Corte de pelo tradicional / moderno" data-sid="corte" class="peer sr-only" checked><span class="flex items-center justify-between gap-3 rounded-2xl border border-line bg-coal px-4 py-3 text-sm font-semibold transition peer-checked:border-gold peer-checked:bg-gold/10 peer-focus-visible:ring-4 peer-focus-visible:ring-gold/40 hover:border-gold/50 motion-reduce:transition-none"><span>Corte de pelo tradicional / moderno</span><span class="font-black text-gold-light">14 €</span></span></label><label class="block cursor-pointer"><input type="radio" name="servicio" value="Degradado / Fade" data-sid="fade" class="peer sr-only"><span class="flex items-center justify-between gap-3 rounded-2xl border border-line bg-coal px-4 py-3 text-sm font-semibold transition peer-checked:border-gold peer-checked:bg-gold/10 peer-focus-visible:ring-4 peer-focus-visible:ring-gold/40 hover:border-gold/50 motion-reduce:transition-none"><span>Degradado / Fade</span><span class="font-black text-gold-light">15 €</span></span></label><label class="block cursor-pointer"><input type="radio" name="servicio" value="Arreglo y perfilado de barba" data-sid="barba" class="peer sr-only"><span class="flex items-center justify-between gap-3 rounded-2xl border border-line bg-coal px-4 py-3 text-sm font-semibold transition peer-checked:border-gold peer-checked:bg-gold/10 peer-focus-visible:ring-4 peer-focus-visible:ring-gold/40 hover:border-gold/50 motion-reduce:transition-none"><span>Arreglo y perfilado de barba</span><span class="font-black text-gold-light">10 €</span></span></label><label class="block cursor-pointer"><input type="radio" name="servicio" value="Combo corte + barba" data-sid="combo" class="peer sr-only"><span class="flex items-center justify-between gap-3 rounded-2xl border border-line bg-coal px-4 py-3 text-sm font-semibold transition peer-checked:border-gold peer-checked:bg-gold/10 peer-focus-visible:ring-4 peer-focus-visible:ring-gold/40 hover:border-gold/50 motion-reduce:transition-none"><span>Combo corte + barba</span><span class="font-black text-gold-light">22 €</span></span></label><label class="block cursor-pointer"><input type="radio" name="servicio" value="Tratamiento capilar y peinado" data-sid="trat" class="peer sr-only"><span class="flex items-center justify-between gap-3 rounded-2xl border border-line bg-coal px-4 py-3 text-sm font-semibold transition peer-checked:border-gold peer-checked:bg-gold/10 peer-focus-visible:ring-4 peer-focus-visible:ring-gold/40 hover:border-gold/50 motion-reduce:transition-none"><span>Tratamiento capilar y peinado</span><span class="font-black text-gold-light">desde 18 €</span></span></label></div></fieldset>
+<div class="grid gap-3 sm:grid-cols-2">
+<div><label for="r-dia" class="text-sm font-bold">Día</label><select id="r-dia" class="mt-1 w-full rounded-xl border border-line bg-ink p-3 text-base focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/40"></select></div>
+<div><label for="r-hora" class="text-sm font-bold">Hora preferida</label><select id="r-hora" class="mt-1 w-full rounded-xl border border-line bg-ink p-3 text-base focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/40"></select></div>
+</div>
+<div><label for="r-nombre" class="text-sm font-bold">Tu nombre</label><input id="r-nombre" type="text" autocomplete="given-name" class="mt-1 w-full rounded-xl border border-line bg-ink p-3 text-base focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/40"></div>
+<p id="r-aviso" class="min-h-[1.25rem] text-sm font-semibold text-gold-light" role="status" aria-live="polite"></p>
+<button id="btn-reserva" type="button" data-cta="whatsapp_reserva" class="btn-gold inline-flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full px-6 text-base transition focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none"><svg class="icf h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-whatsapp"/></svg> Reservar por WhatsApp</button>
+<p class="text-center text-xs text-mute">La hora es una preferencia: te confirmamos disponibilidad por WhatsApp. Más info en la <a href="#privacidad" data-legal="privacidad" class="underline">Política de Privacidad</a>.</p>
+</form>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="horario" class="bg-coal py-14 sm:py-16 lg:py-20">
+<div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+<div class="reveal mx-auto max-w-2xl text-center"><p class="text-xs font-bold uppercase tracking-[0.25em] text-gold">Horario y ubicación</p><h2 id="ubicacion" class="mt-3 scroll-mt-24 text-3xl font-black uppercase sm:text-4xl">Ven a vernos</h2></div>
+<div class="mt-10 grid gap-6 lg:grid-cols-2">
+<div class="space-y-6">
+<article class="reveal rounded-3xl border border-line bg-card p-6 sm:p-8">
+<h3 class="flex items-center gap-2 text-lg font-extrabold"><svg class="ic h-5 w-5 text-gold" aria-hidden="true" focusable="false"><use href="#i-clock"/></svg> Horario</h3>
+<p class="mt-1 text-sm font-bold" data-estado-linea></p>
+<table class="mt-4 w-full text-left text-sm sm:text-base"><caption class="sr-only">Horario de apertura</caption><tbody><tr data-dia="1" class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-semibold">Lunes</th><td class="py-3 text-mute">10:00 – 14:00 · 16:30 – 20:30</td></tr><tr data-dia="2" class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-semibold">Martes</th><td class="py-3 text-mute">10:00 – 14:00 · 16:30 – 20:30</td></tr><tr data-dia="3" class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-semibold">Miércoles</th><td class="py-3 text-mute">10:00 – 14:00 · 16:30 – 20:30</td></tr><tr data-dia="4" class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-semibold">Jueves</th><td class="py-3 text-mute">10:00 – 14:00 · 16:30 – 20:30</td></tr><tr data-dia="5" class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-semibold">Viernes</th><td class="py-3 text-mute">10:00 – 14:00 · 16:30 – 20:30</td></tr><tr data-dia="6" class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-semibold">Sábado</th><td class="py-3 text-mute">09:00 – 14:00</td></tr><tr data-dia="0" class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-semibold">Domingo</th><td class="py-3 text-mute">Cerrado</td></tr></tbody></table>
+</article>
+<article class="reveal rounded-3xl border border-line bg-card p-6 sm:p-8">
+<h3 class="flex items-center gap-2 text-lg font-extrabold"><svg class="ic h-5 w-5 text-gold" aria-hidden="true" focusable="false"><use href="#i-map-pin"/></svg> Dirección</h3>
+<address class="mt-3 not-italic leading-relaxed text-mute">Calle Victorina Gaínza, Nº 4<br>Castro Urdiales, Cantabria</address>
+<div class="mt-4 flex flex-col gap-3 sm:flex-row">
+<a href="https://www.google.com/maps/dir/?api=1&destination=Calle+Victorina+Gainza+4+Castro+Urdiales" target="_blank" rel="noopener" data-cta="como_llegar" class="btn-gold inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full px-6 text-sm transition focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none"><svg class="ic h-4 w-4" aria-hidden="true" focusable="false"><use href="#i-navigation"/></svg> Cómo llegar</a>
+<a href="mailto:contacto@infinitybarber.es" data-cta="email" class="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full border border-line px-6 text-sm font-bold transition hover:border-gold motion-reduce:transition-none"><svg class="ic h-4 w-4 text-gold" aria-hidden="true" focusable="false"><use href="#i-mail"/></svg> contacto@infinitybarber.es</a>
+</div>
+</article>
+</div>
+<div class="reveal relative min-h-[360px] overflow-hidden rounded-3xl border border-line bg-card">
+<button type="button" data-mapa="Calle Victorina Gainza 4, Castro Urdiales" data-titulo="Mapa de Infinity Barber, Calle Victorina Gaínza 4, Castro Urdiales" class="group absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-card to-ink p-6 text-center focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40">
+<span class="flex h-16 w-16 items-center justify-center rounded-full bg-gold text-ink shadow-lg transition group-hover:scale-110 motion-reduce:transition-none"><svg class="ic h-8 w-8" aria-hidden="true" focusable="false"><use href="#i-map-pin"/></svg></span>
+<span class="text-xl font-black">Calle Victorina Gaínza, 4</span>
+<span class="rounded-full bg-bone px-4 py-2 text-sm font-bold text-ink">Ver mapa</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<section id="instagram" class="py-12 sm:py-14">
+<div class="reveal mx-auto max-w-3xl px-4 text-center sm:px-6">
+<p class="text-xs font-bold uppercase tracking-[0.25em] text-gold">Nuestros trabajos</p>
+<h2 class="mt-3 text-2xl font-black uppercase sm:text-3xl">Mira los últimos cortes en Instagram</h2>
+<a href="https://instagram.com/infinitybarber_castro" target="_blank" rel="noopener" data-cta="instagram" class="mt-6 inline-flex min-h-[50px] items-center justify-center gap-2 rounded-full border-2 border-gold px-7 font-bold text-gold-light transition hover:bg-gold hover:text-ink focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none"><svg class="icf h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-instagram"/></svg> @infinitybarber_castro</a>
+</div>
+</section>
+</main>
+<footer class="border-t border-line bg-black py-12">
+<div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+<div class="grid gap-8 text-center sm:grid-cols-3 sm:text-left">
+<div><p class="flex items-center justify-center gap-2 sm:justify-start"><svg class="ic h-6 w-6 text-gold" aria-hidden="true" focusable="false"><use href="#i-infinity"/></svg><span class="text-gold-grad text-xl font-black uppercase tracking-[0.16em]">Infinity Barber</span></p><p class="mt-3 text-sm text-mute">Barbería en Castro Urdiales. Estilo sin límites.</p></div>
+<div class="space-y-1 text-sm text-mute"><p class="font-bold text-bone">Contacto</p><p>Calle Victorina Gaínza, 4, Castro Urdiales</p><p><a href="tel:+34942001122" class="hover:text-gold-light">+34 942 00 11 22</a></p><p><a href="mailto:contacto@infinitybarber.es" class="break-all hover:text-gold-light">contacto@infinitybarber.es</a></p></div>
+<div><p class="text-sm font-bold">Síguenos</p><div class="mt-3 flex justify-center gap-3 sm:justify-start">
+<a href="https://instagram.com/infinitybarber_castro" target="_blank" rel="noopener" aria-label="Instagram de Infinity Barber" class="flex h-11 w-11 items-center justify-center rounded-full border border-line transition hover:border-gold hover:text-gold-light"><svg class="icf h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-instagram"/></svg></a>
+<a href="https://wa.me/34611223344" target="_blank" rel="noopener" aria-label="WhatsApp de Infinity Barber" class="flex h-11 w-11 items-center justify-center rounded-full border border-line transition hover:border-gold hover:text-gold-light"><svg class="icf h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-whatsapp"/></svg></a>
+<a href="https://facebook.com/infinitybarber" target="_blank" rel="noopener" aria-label="Facebook de Infinity Barber" class="flex h-11 w-11 items-center justify-center rounded-full border border-line transition hover:border-gold hover:text-gold-light"><svg class="icf h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-facebook"/></svg></a>
+</div></div>
+</div>
+<div class="mt-10 flex flex-col items-center justify-between gap-3 border-t border-line pt-6 text-xs text-mute sm:flex-row">
+<p>&copy; <span id="anio"></span> Infinity Barber. Todos los derechos reservados.</p>
+<nav aria-label="Legal" class="flex flex-wrap justify-center gap-4"><a href="#aviso-legal" data-legal="aviso" class="hover:text-gold-light">Aviso legal</a><a href="#privacidad" data-legal="privacidad" class="hover:text-gold-light">Privacidad</a><a href="#cookies" data-legal="cookies" class="hover:text-gold-light">Cookies</a></nav>
+</div>
+</div>
+</footer>
+<div class="fixed inset-x-0 bottom-0 z-50 flex gap-2 border-t border-line bg-ink/95 p-3 backdrop-blur md:hidden">
+<a href="tel:+34942001122" data-cta="llamar_barra" class="flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-full border-2 border-gold font-bold text-gold-light"><svg class="ic h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-phone"/></svg> Llamar</a>
+<a href="#reservas" data-cta="reservar_barra" class="btn-gold flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-full"><svg class="ic h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-calendar"/></svg> Reservar</a>
+</div>
+<dialog id="dlg-aviso" aria-labelledby="t-aviso" class="w-[calc(100%-2rem)] max-w-3xl rounded-2xl border p-0 bg-coal text-bone border-line">
+<div class="max-h-[85vh] overflow-y-auto p-6 sm:p-8">
+<div class="flex items-start justify-between gap-4">
+<div><h2 id="t-aviso" class="text-2xl font-bold">Aviso Legal</h2><p class="mt-1 text-xs text-mute">Última actualización: 7 de octubre de 2026</p></div>
+<button type="button" data-close class="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-white/20 hover:border-gold" aria-label="Cerrar">&times;</button>
+</div>
+<h3 class="mt-6 font-semibold">1. Identificación del titular</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">En cumplimiento del artículo 10 de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE), se facilitan los datos identificativos del titular de este sitio web:</p>
+<ul class="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-mute"><li>Titular: <mark class="rounded bg-gold/20 px-1 font-semibold text-gold-light">[NOMBRE O RAZÓN SOCIAL DEL TITULAR]</mark> (nombre comercial: Infinity Barber)</li><li>NIF/CIF: <mark class="rounded bg-gold/20 px-1 font-semibold text-gold-light">[NIF/CIF PENDIENTE]</mark></li><li>Domicilio: Calle Victorina Gaínza, 4, Castro Urdiales (Cantabria), <mark class="rounded bg-gold/20 px-1 font-semibold text-gold-light">[LOCALIDAD Y CÓDIGO POSTAL]</mark></li><li>Correo electrónico: contacto@infinitybarber.es</li><li>Teléfono: +34 942 00 11 22</li><li>Actividad: barbería: cortes de pelo, degradados, arreglo de barba, tratamientos capilares y peinados.</li></ul>
+<h3 class="mt-6 font-semibold">2. Objeto y condiciones de uso</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Este sitio web tiene carácter informativo y comercial sobre la actividad de Infinity Barber. El acceso es gratuito y el usuario se compromete a hacer un uso lícito y adecuado del mismo, sin realizar actividades contrarias a la ley, a la buena fe o al orden público, ni dañar, inutilizar o sobrecargar el sitio.</p>
+<h3 class="mt-6 font-semibold">3. Propiedad intelectual e industrial</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Los textos, diseños, ilustraciones, logotipos y código de este sitio son titularidad de Infinity Barber o se usan con autorización, y están protegidos por la normativa de propiedad intelectual e industrial. Queda prohibida su reproducción, distribución o transformación sin autorización previa y por escrito. Las marcas de terceros mencionadas pertenecen a sus respectivos titulares y su mención no implica afiliación ni patrocinio.</p>
+<h3 class="mt-6 font-semibold">4. Responsabilidad</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">La información publicada (carta, precios, horarios, servicios) es orientativa y puede variar. El titular no garantiza la disponibilidad ininterrumpida del sitio ni la ausencia de errores, salvo que la ley no permita excluir esa responsabilidad. No se responsabiliza de los contenidos de sitios de terceros enlazados.</p>
+<h3 class="mt-6 font-semibold">5. Protección de datos y cookies</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">El tratamiento de datos personales se rige por la Política de Privacidad y el uso de cookies por la Política de Cookies, ambas disponibles en el pie de página.</p>
+<h3 class="mt-6 font-semibold">6. Legislación aplicable</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Este aviso se rige por la legislación española. Para cualquier controversia serán competentes los juzgados y tribunales que correspondan conforme a la ley, respetando el fuero imperativo aplicable a los consumidores y usuarios.</p>
+</div>
+</dialog>
+<dialog id="dlg-privacidad" aria-labelledby="t-priv" class="w-[calc(100%-2rem)] max-w-3xl rounded-2xl border p-0 bg-coal text-bone border-line">
+<div class="max-h-[85vh] overflow-y-auto p-6 sm:p-8">
+<div class="flex items-start justify-between gap-4">
+<div><h2 id="t-priv" class="text-2xl font-bold">Política de Privacidad</h2><p class="mt-1 text-xs text-mute">Última actualización: 7 de octubre de 2026</p></div>
+<button type="button" data-close class="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-white/20 hover:border-gold" aria-label="Cerrar">&times;</button>
+</div>
+<p class="mt-4 text-sm leading-relaxed text-mute">En cumplimiento del Reglamento (UE) 2016/679 (RGPD), de la Ley Orgánica 3/2018 (LOPDGDD) y de la LSSI-CE, te informamos de cómo tratamos tus datos personales cuando te pones en contacto con nosotros.</p>
+<h3 class="mt-6 font-semibold">1. Responsable del tratamiento</h3>
+<ul class="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-mute"><li>Titular: <mark class="rounded bg-gold/20 px-1 font-semibold text-gold-light">[NOMBRE O RAZÓN SOCIAL DEL TITULAR]</mark> (nombre comercial: Infinity Barber)</li><li>NIF/CIF: <mark class="rounded bg-gold/20 px-1 font-semibold text-gold-light">[NIF/CIF PENDIENTE]</mark></li><li>Domicilio: Calle Victorina Gaínza, 4, Castro Urdiales (Cantabria), <mark class="rounded bg-gold/20 px-1 font-semibold text-gold-light">[LOCALIDAD Y CÓDIGO POSTAL]</mark></li><li>Correo electrónico: contacto@infinitybarber.es</li><li>Teléfono: +34 942 00 11 22</li></ul>
+<h3 class="mt-6 font-semibold">2. Datos que tratamos</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Los que nos facilitas por WhatsApp, teléfono o correo electrónico: nombre, teléfono, servicio solicitado y el día y la hora que prefieres. Los proveedores técnicos de alojamiento pueden tratar datos de conexión (como la IP) por seguridad y funcionamiento.</p>
+<h3 class="mt-6 font-semibold">3. Finalidad y base jurídica</h3>
+<ul class="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-mute"><li>Gestionar tus reservas de cita y confirmarte el día y la hora. Base jurídica: ejecución de medidas precontractuales y del contrato (art. 6.1.b RGPD).</li><li>Atender consultas y solicitudes. Base jurídica: tu consentimiento y la aplicación de medidas precontractuales a petición tuya (art. 6.1.a y 6.1.b RGPD).</li><li>Cumplir obligaciones legales, como las fiscales y contables, cuando haya una operación comercial (art. 6.1.c RGPD).</li><li>Comunicaciones comerciales: solo si las solicitas o das tu consentimiento previo y expreso (art. 21 LSSI-CE).</li></ul>
+<h3 class="mt-6 font-semibold">4. Plazo de conservación</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Conservamos los datos el tiempo necesario para atender tu solicitud y, después, bloqueados durante los plazos exigidos por la normativa aplicable. Pasados esos plazos, se suprimen.</p>
+<h3 class="mt-6 font-semibold">5. Destinatarios</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">No cedemos tus datos a terceros salvo obligación legal. Utilizamos proveedores necesarios para prestar el servicio, como Cloudflare (alojamiento del sitio web) y, si nos escribes por WhatsApp, Meta Platforms, que trata los datos según su propia política. Algunos proveedores pueden estar fuera del Espacio Económico Europeo; en ese caso, las transferencias se amparan en las garantías del RGPD (decisiones de adecuación o cláusulas contractuales tipo). Al pulsar «Ver mapa» se carga un mapa de Google, que puede recibir tu dirección IP.</p>
+<h3 class="mt-6 font-semibold">6. Tus derechos</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad, y retirar tu consentimiento en cualquier momento, escribiendo a contacto@infinitybarber.es e identificándote. Si consideras que no se han atendido correctamente, puedes reclamar ante la Agencia Española de Protección de Datos (www.aepd.es).</p>
+<h3 class="mt-6 font-semibold">7. Menores y veracidad</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Este sitio no está dirigido a menores de 14 años. Al facilitarnos datos garantizas que son veraces y, si son de terceros, que cuentas con su legitimación.</p>
+<h3 class="mt-6 font-semibold">8. Seguridad y actualizaciones</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Aplicamos medidas técnicas y organizativas razonables (como la conexión cifrada HTTPS). Podemos actualizar esta política; la versión vigente es la publicada en el sitio.</p>
+</div>
+</dialog>
+<dialog id="dlg-cookies" aria-labelledby="t-cook" class="w-[calc(100%-2rem)] max-w-3xl rounded-2xl border p-0 bg-coal text-bone border-line">
+<div class="max-h-[85vh] overflow-y-auto p-6 sm:p-8">
+<div class="flex items-start justify-between gap-4">
+<div><h2 id="t-cook" class="text-2xl font-bold">Política de Cookies</h2><p class="mt-1 text-xs text-mute">Última actualización: 7 de octubre de 2026</p></div>
+<button type="button" data-close class="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-white/20 hover:border-gold" aria-label="Cerrar">&times;</button>
+</div>
+<p class="mt-4 text-sm leading-relaxed text-mute">Esta política cumple con el artículo 22.2 de la LSSI-CE y con la Guía sobre el uso de las cookies de la Agencia Española de Protección de Datos.</p>
+<h3 class="mt-6 font-semibold">1. ¿Qué son las cookies?</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Son pequeños archivos que un sitio web guarda en tu dispositivo para recordar información sobre tu visita.</p>
+<h3 class="mt-6 font-semibold">2. Cookies en este sitio</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Este sitio no instala cookies propias ni de terceros con fines analíticos, de personalización o publicitarios, por lo que no muestra banner de consentimiento. Los servicios de infraestructura pueden emplear mecanismos técnicos estrictamente necesarios para la seguridad y el funcionamiento, exentos de consentimiento conforme al artículo 22.2 de la LSSI-CE.</p>
+<h3 class="mt-6 font-semibold">3. Contenido de terceros</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">El mapa de Google solo se carga si pulsas «Ver mapa». En ese caso, Google puede tratar datos técnicos (como tu IP) y utilizar cookies según su política.</p>
+<h3 class="mt-6 font-semibold">4. Cómo gestionar o eliminar cookies</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Puedes permitir, bloquear o eliminar cookies desde la configuración de tu navegador (Chrome, Firefox, Safari, Edge, etc.).</p>
+<h3 class="mt-6 font-semibold">5. Cambios y contacto</h3>
+<p class="mt-2 text-sm leading-relaxed text-mute">Si en el futuro se incorporan herramientas que usen cookies no necesarias, actualizaremos esta política y pediremos tu consentimiento previo. Dudas: contacto@infinitybarber.es.</p>
+</div>
+</dialog>
+<script>
+(function () {
+"use strict";
+var SLOTS = {"0": [], "1": [[600, 840], [990, 1230]], "2": [[600, 840], [990, 1230]], "3": [[600, 840], [990, 1230]], "4": [[600, 840], [990, 1230]], "5": [[600, 840], [990, 1230]], "6": [[540, 840]]};
+var DIAS_EN = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+var DIAS_ES = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+function hhmm(m) { return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); }
+function ahora() {
+var p = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Madrid", weekday: "short", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date());
+var v = {}; p.forEach(function (x) { v[x.type] = x.value; });
+return { dia: DIAS_EN.indexOf(v.weekday), min: (parseInt(v.hour, 10) % 24) * 60 + parseInt(v.minute, 10), y: +v.year, m: +v.month, d: +v.day };
+}
+function calcularEstado() {
+var a = ahora(), i, j, s, sl = SLOTS[a.dia], cuando;
+for (j = 0; j < sl.length; j++) { s = sl[j]; if (a.min >= s[0] && a.min < s[1]) { return { abierto: true, texto: "Abierto ahora", detalle: "Abierto ahora · cierra a las " + hhmm(s[1]) }; } }
+for (i = 0; i < 7; i++) {
+var d = (a.dia + i) % 7; sl = SLOTS[d];
+for (j = 0; j < sl.length; j++) {
+s = sl[j];
+if (i > 0 || s[0] > a.min) {
+cuando = i === 0 ? "hoy" : (i === 1 ? "mañana" : "el " + DIAS_ES[d]);
+return { abierto: false, texto: "Cerrado", detalle: "Cerrado · abre " + cuando + " a las " + hhmm(s[0]) };
+}
+}
+}
+return { abierto: false, texto: "Cerrado", detalle: "Cerrado" };
+}
+function actualizarEstado() {
+var e = calcularEstado(), a = ahora();
+document.querySelectorAll("[data-estado]").forEach(function (el) {
+el.dataset.abierto = e.abierto ? "1" : "0";
+var t = el.querySelector("[data-estado-texto]"); if (t) { t.textContent = e.texto; }
+el.title = e.detalle;
+});
+document.querySelectorAll("[data-estado-linea]").forEach(function (el) { el.textContent = e.detalle; el.dataset.abierto = e.abierto ? "1" : "0"; });
+document.querySelectorAll("tr[data-dia]").forEach(function (tr) { tr.dataset.hoy = parseInt(tr.dataset.dia, 10) === a.dia ? "1" : "0"; });
+}
+/* Próximos días abiertos y horas disponibles (según el horario) */
+function proximosDias(n) {
+var a = ahora(), out = [], i = 0;
+var fmt = new Intl.DateTimeFormat("es-ES", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+while (out.length < n && i < 21) {
+var f = new Date(Date.UTC(a.y, a.m - 1, a.d + i)), dow = f.getUTCDay();
+if (SLOTS[dow].length) {
+var et = fmt.format(f); et = et.charAt(0).toUpperCase() + et.slice(1);
+out.push({ dow: dow, hoy: i === 0, etiqueta: (i === 0 ? "Hoy · " : (i === 1 ? "Mañana · " : "")) + et });
+}
+i++;
+}
+return out;
+}
+function horasDia(dow, hoy, paso, duracion) {
+var a = ahora(), res = [];
+SLOTS[dow].forEach(function (s) {
+for (var m = s[0]; m + duracion <= s[1]; m += paso) { if (!hoy || m > a.min + 10) { res.push(hhmm(m)); } }
+});
+return res;
+}
+function rellenarSelectDiaHora(selDia, selHora, paso, duracion) {
+var dias = proximosDias(7);
+selDia.innerHTML = "";
+dias.forEach(function (d, i) { var o = document.createElement("option"); o.value = i; o.textContent = d.etiqueta; selDia.appendChild(o); });
+function horas() {
+var d = dias[selDia.value]; selHora.innerHTML = "";
+var hs = horasDia(d.dow, d.hoy, paso, duracion);
+if (!hs.length) { var o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Sin horas hoy; elige otro día"; selHora.appendChild(o0); return; }
+hs.forEach(function (h) { var o = document.createElement("option"); o.value = h; o.textContent = h; selHora.appendChild(o); });
+}
+selDia.addEventListener("change", horas); horas();
+return dias;
+}
+/* Mapa: se carga solo al pulsar (más rápido y más privado) */
+document.querySelectorAll("[data-mapa]").forEach(function (b) {
+b.addEventListener("click", function () {
+var f = document.createElement("iframe");
+f.src = "https://www.google.com/maps?q=" + encodeURIComponent(b.dataset.mapa) + "&output=embed";
+f.title = b.dataset.titulo || "Mapa"; f.loading = "lazy"; f.className = "h-full w-full border-0"; f.referrerPolicy = "no-referrer-when-downgrade";
+b.parentNode.replaceChild(f, b);
+});
+});
+/* Textos legales */
+var LEGALES = { aviso: "dlg-aviso", privacidad: "dlg-privacidad", cookies: "dlg-cookies" };
+document.querySelectorAll("[data-legal]").forEach(function (a) {
+a.addEventListener("click", function (e) {
+e.preventDefault();
+var d = document.getElementById(LEGALES[a.dataset.legal]);
+if (d && typeof d.showModal === "function") { document.documentElement.style.overflow = "hidden"; d.showModal(); }
+});
+});
+document.querySelectorAll("dialog").forEach(function (d) {
+d.addEventListener("click", function (e) { if (e.target === d) { d.close(); } });
+d.addEventListener("close", function () { document.documentElement.style.overflow = ""; });
+var x = d.querySelector("[data-close]"); if (x) { x.addEventListener("click", function () { d.close(); }); }
+});
+/* Menú móvil */
+var mbtn = document.getElementById("menu-btn"), menu = document.getElementById("menu-movil");
+function cerrarMenu() { menu.classList.add("hidden"); mbtn.setAttribute("aria-expanded", "false"); mbtn.setAttribute("aria-label", "Abrir menú"); }
+mbtn.addEventListener("click", function () {
+if (mbtn.getAttribute("aria-expanded") === "true") { cerrarMenu(); return; }
+menu.classList.remove("hidden"); mbtn.setAttribute("aria-expanded", "true"); mbtn.setAttribute("aria-label", "Cerrar menú");
+});
+menu.querySelectorAll("a").forEach(function (a) { a.addEventListener("click", cerrarMenu); });
+document.addEventListener("keydown", function (e) { if (e.key === "Escape") { cerrarMenu(); } });
+/* Animación de entrada */
+var rv = document.querySelectorAll(".reveal");
+if ("IntersectionObserver" in window) {
+var io = new IntersectionObserver(function (en) { en.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add("is-visible"); io.unobserve(x.target); } }); }, { threshold: 0.12 });
+rv.forEach(function (el) { io.observe(el); });
+} else { rv.forEach(function (el) { el.classList.add("is-visible"); }); }
+document.getElementById("anio").textContent = new Date().getFullYear();
+actualizarEstado(); setInterval(actualizarEstado, 60000);
+var WA_NUM = "34611223344";
+/* Reserva por WhatsApp */
+var selDia = document.getElementById("r-dia"), selHora = document.getElementById("r-hora");
+var dias = rellenarSelectDiaHora(selDia, selHora, 30, 30);
+function servicioSel() { return document.querySelector('input[name="servicio"]:checked'); }
+document.querySelectorAll("[data-elegir]").forEach(function (b) {
+b.addEventListener("click", function () {
+var r = document.querySelector('input[data-sid="' + b.dataset.elegir + '"]');
+if (r) { r.checked = true; }
+document.getElementById("reservas").scrollIntoView({ behavior: "smooth" });
+});
+});
+document.getElementById("btn-reserva").addEventListener("click", function () {
+var nombre = document.getElementById("r-nombre").value.trim(), av = document.getElementById("r-aviso");
+if (!nombre) { av.textContent = "Dinos tu nombre para la reserva."; document.getElementById("r-nombre").focus(); return; }
+av.textContent = "";
+var d = dias[selDia.value], s = servicioSel();
+var txt = "Hola, quiero reservar cita en Infinity Barber:\n- Servicio: " + s.value + "\n- Día: " + d.etiqueta + (selHora.value ? "\n- Hora preferida: " + selHora.value : "") + "\nNombre: " + nombre + "\n¿Me confirmáis la disponibilidad? Gracias.";
+window.open("https://wa.me/" + WA_NUM + "?text=" + encodeURIComponent(txt), "_blank", "noopener");
+});
+/* Guía de degradados */
+var FADES = {
+low: { y1: 52, y2: 88, t: "Low fade", d: "El degradado empieza bajo, cerca de la oreja y la nuca. Es el más discreto: cambio suave y fácil de llevar." },
+mid: { y1: 42, y2: 72, t: "Mid fade", d: "El degradado arranca a media altura de la cabeza. Equilibrio entre discreción y contraste: el más pedido." },
+high: { y1: 34, y2: 56, t: "High fade", d: "El degradado sube hasta la zona alta de la cabeza. Contraste marcado y un aspecto muy limpio y moderno." }
+};
+var g = document.getElementById("fadeG"), fBtns = Array.prototype.slice.call(document.querySelectorAll("[data-fade]"));
+var fTit = document.getElementById("fade-titulo"), fDes = document.getElementById("fade-desc"), fCta = document.getElementById("fade-cta");
+function setFade(k) {
+var f = FADES[k];
+g.setAttribute("y1", f.y1); g.setAttribute("y2", f.y2);
+fTit.textContent = f.t; fDes.textContent = f.d;
+fBtns.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.fade === k ? "true" : "false"); });
+fCta.href = "https://wa.me/" + WA_NUM + "?text=" + encodeURIComponent("Hola, quiero reservar un degradado (" + f.t + ").");
+}
+fBtns.forEach(function (b) { b.addEventListener("click", function () { setFade(b.dataset.fade); }); });
+setFade("mid");
+})();
+</script>
 </body>
 </html>
