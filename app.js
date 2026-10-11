@@ -1,0 +1,345 @@
+/* app.js · reservas reales, cuenta, club de puntos (Infinity Barber). Sin librerías. */
+(function () {
+"use strict";
+var $ = function (s, r) { return (r || document).querySelector(s); };
+var esc = function (v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+var eur = function (c) { return (c / 100).toFixed(2).replace(".", ",").replace(",00", "") + " €"; };
+var CFG = null, USER = null;
+
+function api(method, path, body) {
+  return fetch(path, { method: method, credentials: "same-origin", headers: body ? { "content-type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined })
+    .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || "Error"); e.status = r.status; throw e; } return j; }); });
+}
+function msg(el, text, kind) { if (!el) return; el.textContent = text || ""; el.className = "bx-msg" + (kind ? " " + kind : ""); }
+function openLegal(e) { e.preventDefault(); var d = document.getElementById("dlg-privacidad"); if (d && d.showModal) { d.showModal(); } }
+
+/* ---------------------------------------------------------------- fechas (Madrid) */
+function todayLocal() {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid" }).format(new Date());
+}
+function addDays(d, n) { var o = new Date(d + "T00:00:00Z"); o.setUTCDate(o.getUTCDate() + n); return o.toISOString().slice(0, 10); }
+var DOW = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+function dow(d) { return new Date(d + "T00:00:00Z").getUTCDay(); }
+
+/* ---------------------------------------------------------------- RESERVA */
+var S = { service: null, barber: 0, date: null, time: null, slots: [], busy: false };
+var root;
+
+function initBooking() {
+  var old = $("#reservas form");
+  if (!old) return;
+  root = document.createElement("div");
+  root.className = "bk space-y-4";
+  root.id = "bk-app";
+  old.parentNode.insertBefore(root, old);
+  old.hidden = true;
+  var intro = $("#reservas .text-mute");
+  if (intro) intro.textContent = "Elige servicio, barbero, día y hora. Te llega la confirmación y un recordatorio por correo, y puedes cancelar desde el enlace.";
+  S.service = CFG.services[0] ? CFG.services[0].id : null;
+  S.date = null;
+  renderBooking();
+  // El botón "Elegir" de la tarjeta de cada servicio preselecciona ese servicio
+  document.querySelectorAll("[data-elegir]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var key = b.dataset.elegir, map = { corte: /^corte de pelo/i, fade: /degrad|fade/i, barba: /^arreglo/i, combo: /corte \+ barba/i, trat: /tratamiento/i };
+      var s = CFG.services.filter(function (x) { return map[key] && map[key].test(x.name); })[0];
+      if (s) { S.service = s.id; S.time = null; renderBooking(); loadSlots(); }
+    });
+  });
+  preselectFromHash();
+  loadSlots();
+}
+
+function preselectFromHash() {
+  var p = new URLSearchParams(location.search), corte = p.get("corte");
+  if (corte) { S.note = corte; }
+}
+
+function renderBooking() {
+  var svc = CFG.services.map(function (s) {
+    return '<label><input type="radio" name="bk-svc" value="' + s.id + '"' + (s.id === S.service ? " checked" : "") + '><b>' + esc(s.name) + '<small> · ' + s.minutes + ' min</small></b><em>' + eur(s.price_cents) + "</em></label>";
+  }).join("");
+  var barbers = '<button type="button" class="bx-chip" data-b="0" aria-pressed="' + (S.barber === 0) + '">Cualquiera</button>' + CFG.barbers.map(function (b) { return '<button type="button" class="bx-chip" data-b="' + b.id + '" aria-pressed="' + (S.barber === b.id) + '">' + esc(b.name) + "</button>"; }).join("");
+  var today = todayLocal(), days = "";
+  for (var i = 0; i <= Math.min(CFG.rules.maxDays, 20); i++) {
+    var d = addDays(today, i), open = (CFG.hours[String(dow(d))] || []).length > 0;
+    days += '<button type="button" class="bk-day" data-d="' + d + '"' + (open ? "" : " disabled") + ' aria-pressed="' + (S.date === d) + '" aria-label="' + esc(DOW[dow(d)] + " " + d.slice(8)) + '"><span>' + (i === 0 ? "hoy" : DOW[dow(d)]) + "</span><b>" + Number(d.slice(8)) + "</b></button>";
+  }
+  var u = USER || {};
+  root.innerHTML =
+    "<h3>1 · Servicio</h3><div class='bk-svc' role='radiogroup' aria-label='Servicio'>" + svc + "</div>" +
+    "<h3>2 · Barbero</h3><div class='bk-row' role='group' aria-label='Barbero'>" + barbers + "</div>" +
+    "<h3>3 · Día</h3><div class='bk-days' role='group' aria-label='Día'>" + days + "</div>" +
+    "<h3>4 · Hora</h3><div id='bk-slots' class='bk-slots' aria-live='polite'></div><p id='bk-slotmsg' class='bx-msg'></p>" +
+    "<div id='bk-form' hidden><h3>5 · Tus datos</h3>" +
+    "<label class='bx-lab' for='bk-name' style='margin-top:0'>Nombre</label><input id='bk-name' class='bx-in' autocomplete='given-name' maxlength='60' value='" + esc(u.name || "") + "'>" +
+    "<label class='bx-lab' for='bk-phone'>Teléfono</label><input id='bk-phone' class='bx-in' type='tel' inputmode='tel' autocomplete='tel' maxlength='20' value='" + esc(u.phone || "") + "'>" +
+    "<label class='bx-lab' for='bk-email'>Correo <span class='bx-small'>(para confirmación y recordatorio)</span></label><input id='bk-email' class='bx-in' type='email' autocomplete='email' maxlength='120' value='" + esc(u.email || "") + "'>" +
+    "<label class='bk-terms'><input id='bk-terms' type='checkbox'><span>He leído y acepto la <a href='#privacidad' data-legal-link>Política de Privacidad</a>. Usaremos tus datos solo para gestionar la cita.</span></label>" +
+    "<div id='bk-sum' class='bk-sum'></div>" +
+    "<p id='bk-cutnote' class='bx-small' " + (S.note ? "" : "hidden") + ">" + (S.note ? "Corte elegido: " + esc(S.note) : "") + "</p><p id='bk-msg' class='bx-msg' role='status' aria-live='polite'></p>" +
+    "<button type='button' id='bk-go' class='bx-btn' style='width:100%;min-height:54px'>Confirmar cita</button>" +
+    (USER ? "" : "<p class='bx-small' style='text-align:center;margin-top:.7rem'>¿Ya eres del club? <button type='button' class='cx-link' data-open-account>Inicia sesión</button> y suma puntos con cada cita.</p>") +
+    "</div>";
+  root.querySelectorAll("[name=bk-svc]").forEach(function (r) { r.addEventListener("change", function () { S.service = Number(r.value); S.time = null; loadSlots(); }); });
+  root.querySelectorAll("[data-b]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      S.barber = Number(b.dataset.b); S.time = null;
+      root.querySelectorAll("[data-b]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      loadSlots();
+    });
+  });
+  root.querySelectorAll("[data-d]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      S.date = b.dataset.d; S.time = null;
+      root.querySelectorAll("[data-d]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      loadSlots();
+    });
+  });
+  var lg = $("[data-legal-link]", root); if (lg) lg.addEventListener("click", openLegal);
+  var oa = $("[data-open-account]", root); if (oa) oa.addEventListener("click", function () { openAccount(); });
+  var go = $("#bk-go", root); if (go) go.addEventListener("click", submitBooking);
+  if (!S.date) { var first = $("[data-d]:not([disabled])", root); if (first) { S.date = first.dataset.d; first.setAttribute("aria-pressed", "true"); } }
+  var form = $("#bk-form", root); if (form && S.time) { form.hidden = false; updateSummary(); }
+}
+
+function loadSlots() {
+  var box = $("#bk-slots", root), m = $("#bk-slotmsg", root);
+  if (!box || !S.date || !S.service) { return; }
+  box.innerHTML = ""; msg(m, "Buscando huecos…");
+  var date = S.date, svc = S.service, bar = S.barber;
+  api("GET", "/api/availability?date=" + date + "&service=" + svc + "&barber=" + bar).then(function (r) {
+    if (date !== S.date || svc !== S.service || bar !== S.barber) return;
+    S.slots = r.slots || [];
+    if (!S.slots.length) { msg(m, "No quedan huecos ese día. Prueba otro día o escríbenos por WhatsApp."); return; }
+    msg(m, "");
+    box.innerHTML = S.slots.map(function (s) { return '<button type="button" class="bx-chip" data-t="' + s.time + '" aria-pressed="' + (S.time === s.time) + '">' + s.time + "</button>"; }).join("");
+    box.querySelectorAll("[data-t]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        S.time = b.dataset.t;
+        box.querySelectorAll("[data-t]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+        var f = $("#bk-form", root); f.hidden = false; updateSummary();
+        f.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    });
+  }).catch(function (e) { msg(m, e.message || "No se pudieron cargar los huecos.", "err"); });
+}
+
+function updateSummary() {
+  var s = CFG.services.filter(function (x) { return x.id === S.service; })[0], b = CFG.barbers.filter(function (x) { return x.id === S.barber; })[0];
+  var el = $("#bk-sum", root); if (!el || !s) return;
+  var d = new Date(S.date + "T00:00:00Z");
+  var txt = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(d);
+  el.innerHTML = "<b>" + esc(s.name) + "</b> · " + eur(s.price_cents) + "<br>" + esc(txt) + " a las <b>" + esc(S.time) + "</b> · " + (b ? "con " + esc(b.name) : "con el primer barbero libre");
+}
+
+function submitBooking() {
+  var m = $("#bk-msg", root), btn = $("#bk-go", root);
+  var name = $("#bk-name", root).value.trim(), phone = $("#bk-phone", root).value.trim(), email = $("#bk-email", root).value.trim();
+  if (!name) { msg(m, "Escribe tu nombre.", "err"); $("#bk-name", root).focus(); return; }
+  if (phone.replace(/\D/g, "").length < 9) { msg(m, "Escribe un teléfono válido.", "err"); $("#bk-phone", root).focus(); return; }
+  if (!$("#bk-terms", root).checked) { msg(m, "Acepta la política de privacidad para continuar.", "err"); return; }
+  btn.disabled = true; msg(m, "Reservando…");
+  api("POST", "/api/book", { name: name, phone: phone, email: email, service: S.service, barber: S.barber, start: S.date + " " + S.time, terms: true, note: S.note || "" }).then(function (r) {
+    showBooked(r.booking, !!email);
+  }).catch(function (e) {
+    btn.disabled = false; msg(m, e.message, "err");
+    if (e.status === 409) { S.time = null; loadSlots(); }
+  });
+}
+
+function showBooked(b, hasEmail) {
+  var cal = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("Cita en Infinity Barber") + "&dates=" + b.start.replace(/[-: ]/g, "").slice(0, 13) + "00/" + b.start.replace(/[-: ]/g, "").slice(0, 13) + "00&ctz=Europe%2FMadrid";
+  root.innerHTML = "<div class='bk-ok'><div class='tick' aria-hidden='true'>✓</div><h3 style='margin:0 0 .5rem;font-size:1.3rem;color:var(--bone);text-transform:none;letter-spacing:0'>¡Cita confirmada!</h3>" +
+    "<p style='font-size:1.05rem;line-height:1.6'><b>" + esc(b.whenText) + "</b><br>" + esc(b.service) + " · " + eur(b.price_cents) + (b.barber ? "<br>Con " + esc(b.barber) : "") + "</p>" +
+    "<p class='bx-small' style='margin:1rem 0'>" + (hasEmail ? "Te hemos enviado la confirmación por correo y te avisaremos 24 h antes." : "Guarda esta página: no dejaste correo, así que no recibirás recordatorio. Te avisaremos por WhatsApp si hace falta.") + "</p>" +
+    "<div style='display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center'><a class='bx-ghost' href='" + esc(cal) + "' target='_blank' rel='noopener'>Añadir al calendario</a><a class='bx-ghost' href='?cita=" + esc(b.code) + "'>Ver o cancelar</a><button type='button' class='bx-ghost' id='bk-again'>Otra cita</button></div></div>";
+  $("#bk-again", root).addEventListener("click", function () { S.time = null; renderBooking(); loadSlots(); });
+  if (USER) { refreshMe(); }
+  root.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+/* ---------------------------------------------------------------- CUENTA / CLUB */
+var dlg;
+function ensureDialog() {
+  if (dlg) return dlg;
+  dlg = document.createElement("dialog");
+  dlg.className = "cx"; dlg.setAttribute("aria-labelledby", "cx-title");
+  document.body.appendChild(dlg);
+  dlg.addEventListener("click", function (e) { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener("close", function () { document.documentElement.style.overflow = ""; });
+  return dlg;
+}
+function showDlg(html) {
+  var d = ensureDialog();
+  d.innerHTML = "<div class='cx-in'>" + html + "</div>";
+  var x = $(".cx-x", d); if (x) x.addEventListener("click", function () { d.close(); });
+  if (!d.open) { document.documentElement.style.overflow = "hidden"; d.showModal(); }
+  return d;
+}
+function top(title) { return "<div class='cx-top'><h2 id='cx-title'>" + esc(title) + "</h2><button type='button' class='cx-x' aria-label='Cerrar'>✕</button></div>"; }
+
+function openAccount(tab) {
+  if (USER) return renderAccount();
+  renderAuth(tab || "login");
+}
+
+function renderAuth(tab, extra) {
+  var reg = tab === "register", ref = new URLSearchParams(location.search).get("ref") || "";
+  var d = showDlg(top(reg ? "Crear cuenta" : "Entrar") +
+    "<div class='cx-tabs' role='tablist'><button type='button' class='bx-chip' data-tab='login' aria-pressed='" + !reg + "'>Entrar</button><button type='button' class='bx-chip' data-tab='register' aria-pressed='" + reg + "'>Crear cuenta</button></div>" +
+    (reg ? "<p class='bx-small'>Únete al club: <b>puntos con cada cita</b> y premios (cortes, barba, productos). Empiezas con " + CFG.rules.welcomePoints + " puntos.</p>" : "") +
+    "<form id='cx-form' novalidate>" +
+    (reg ? "<label class='bx-lab' for='cx-name'>Nombre</label><input id='cx-name' class='bx-in' autocomplete='given-name' maxlength='60'>" : "") +
+    "<label class='bx-lab' for='cx-email'>Correo</label><input id='cx-email' class='bx-in' type='email' autocomplete='email' maxlength='120'>" +
+    (reg ? "<label class='bx-lab' for='cx-phone'>Teléfono <span class='bx-small'>(opcional)</span></label><input id='cx-phone' class='bx-in' type='tel' autocomplete='tel' maxlength='20'>" : "") +
+    "<label class='bx-lab' for='cx-pass'>Contraseña " + (reg ? "<span class='bx-small'>(mínimo 8 caracteres)</span>" : "") + "</label><input id='cx-pass' class='bx-in' type='password' autocomplete='" + (reg ? "new-password" : "current-password") + "' maxlength='128'>" +
+    (reg ? "<label class='bk-terms'><input id='cx-terms' type='checkbox'><span>Acepto la <a href='#privacidad' data-legal-link>Política de Privacidad</a>.</span></label><label class='bk-terms'><input id='cx-mkt' type='checkbox'><span>Quiero recibir ofertas y novedades por correo (opcional).</span></label>" : "") +
+    "<p id='cx-msg' class='bx-msg' role='status' aria-live='polite'>" + esc(extra || "") + "</p>" +
+    "<button type='submit' class='bx-btn' style='width:100%'>" + (reg ? "Crear mi cuenta" : "Entrar") + "</button></form>" +
+    (reg ? "" : "<button type='button' class='cx-link' id='cx-forgot'>He olvidado mi contraseña</button>"));
+  d.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () { renderAuth(b.dataset.tab); }); });
+  var lg = $("[data-legal-link]", d); if (lg) lg.addEventListener("click", function (e) { d.close(); openLegal(e); });
+  var f = $("#cx-form", d), m = $("#cx-msg", d);
+  f.addEventListener("submit", function (e) {
+    e.preventDefault(); msg(m, "Un momento…");
+    var body = { email: $("#cx-email", d).value, password: $("#cx-pass", d).value };
+    if (reg) {
+      body.name = $("#cx-name", d).value; body.phone = $("#cx-phone", d).value; body.terms = $("#cx-terms", d).checked; body.marketing = $("#cx-mkt", d).checked; if (ref) body.ref = ref;
+      if (!body.terms) { msg(m, "Acepta la política de privacidad para continuar.", "err"); return; }
+    }
+    api("POST", "/api/auth/" + (reg ? "register" : "login"), body).then(function () { return refreshMe(); }).then(function () { renderAccount(); renderBooking(); loadSlots(); }).catch(function (er) { msg(m, er.message, "err"); });
+  });
+  var fg = $("#cx-forgot", d);
+  if (fg) fg.addEventListener("click", function () {
+    var email = $("#cx-email", d).value;
+    if (!email) { msg(m, "Escribe tu correo arriba y pulsa de nuevo.", "err"); return; }
+    api("POST", "/api/auth/forgot", { email: email }).then(function () { msg(m, "Si ese correo tiene cuenta, te hemos enviado un enlace para elegir otra contraseña.", "ok"); }).catch(function (er) { msg(m, er.message, "err"); });
+  });
+  setTimeout(function () { var i = $("input", f); if (i) i.focus(); }, 50);
+}
+
+var ME = null;
+function refreshMe() {
+  return api("GET", "/api/me").then(function (r) { USER = r.user; ME = r; updateHeader(); return r; }).catch(function () { USER = null; });
+}
+
+function renderAccount() {
+  if (!ME || !USER) return renderAuth("login");
+  var r = ME;
+  var up = r.upcoming.length ? r.upcoming.map(function (b) {
+    return "<li><span><b>" + esc(b.whenText) + "</b><small>" + esc(b.service_name) + " · " + esc(b.barber) + "</small></span><button type='button' class='bx-ghost' data-cancel='" + esc(b.code) + "'>Cancelar</button></li>";
+  }).join("") : "<li><span class='bx-small'>No tienes citas pendientes.</span><a class='bx-ghost' href='#reservas' data-close-dlg>Reservar</a></li>";
+  var rw = CFG.rewards.map(function (x) {
+    var can = r.points >= x.cost;
+    return "<li><span><b>" + esc(x.name) + "</b><small>" + x.cost + " puntos</small></span><button type='button' class='bx-btn' style='min-height:40px;padding:0 1rem;font-size:.85rem' data-redeem='" + x.id + "'" + (can ? "" : " disabled") + ">Canjear</button></li>";
+  }).join("");
+  var reds = r.redemptions.length ? r.redemptions.map(function (x) { return "<li><span><b>" + esc(x.reward_name) + "</b><small>" + (x.status === "used" ? "Ya usado" : "Enseña este código en la barbería") + "</small></span><span class='cx-code'>" + esc(x.code) + "</span></li>"; }).join("") : "";
+  var led = r.ledger.map(function (x) { return "<li><span>" + esc(x.reason) + "</span><b style='color:" + (x.delta > 0 ? "var(--ok)" : "var(--bad)") + "'>" + (x.delta > 0 ? "+" : "") + x.delta + "</b></li>"; }).join("");
+  var link = location.origin + "/?ref=" + r.user.refCode;
+  var d = showDlg(top("Hola, " + r.user.name.split(" ")[0]) +
+    "<div class='cx-pts'><b>" + r.points + "</b><span>puntos del club</span></div>" +
+    "<h3>Próximas citas</h3><ul class='cx-list'>" + up + "</ul>" +
+    "<h3>Premios</h3><ul class='cx-list'>" + rw + "</ul><p id='cx-msg' class='bx-msg' role='status' aria-live='polite'></p>" +
+    (reds ? "<h3>Mis canjes</h3><ul class='cx-list'>" + reds + "</ul>" : "") +
+    "<h3>Trae a un amigo</h3><p class='bx-small'>Si tu amigo se registra con tu enlace y hace su primera cita, os damos <b>" + r.referralPoints + " puntos</b> a los dos.</p><div style='display:flex;gap:.5rem;margin-top:.5rem'><input class='bx-in' style='margin:0' readonly value='" + esc(link) + "' aria-label='Tu enlace'><button type='button' class='bx-ghost' id='cx-copy'>Copiar</button></div>" +
+    (led ? "<h3>Movimientos</h3><ul class='cx-list'>" + led + "</ul>" : "") +
+    "<h3>Ajustes</h3><label class='bk-terms' style='margin-top:0'><input id='cx-mkt' type='checkbox'" + (r.user.marketing ? " checked" : "") + "><span>Recibir ofertas y novedades por correo</span></label>" +
+    "<div style='display:flex;flex-wrap:wrap;gap:1rem;margin-top:.8rem'><button type='button' class='cx-link' id='cx-out'>Cerrar sesión</button><button type='button' class='cx-link danger' id='cx-del'>Borrar mi cuenta</button></div>");
+  var m = $("#cx-msg", d);
+  d.querySelectorAll("[data-close-dlg]").forEach(function (a) { a.addEventListener("click", function () { d.close(); }); });
+  d.querySelectorAll("[data-cancel]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      if (!confirm("¿Cancelar esta cita?")) return;
+      api("POST", "/api/cancel", { code: b.dataset.cancel }).then(function () { return refreshMe(); }).then(renderAccount).catch(function (e) { alert(e.message); });
+    });
+  });
+  d.querySelectorAll("[data-redeem]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      api("POST", "/api/club/redeem", { rewardId: Number(b.dataset.redeem) }).then(function () { return refreshMe(); }).then(renderAccount).catch(function (e) { msg(m, e.message, "err"); });
+    });
+  });
+  $("#cx-copy", d).addEventListener("click", function () { try { navigator.clipboard.writeText(link); msg(m, "Enlace copiado.", "ok"); } catch (e) { msg(m, "Cópialo a mano.", "err"); } });
+  $("#cx-mkt", d).addEventListener("change", function (e) { api("POST", "/api/auth/marketing", { marketing: e.target.checked }).catch(function (er) { msg(m, er.message, "err"); }); });
+  $("#cx-out", d).addEventListener("click", function () { api("POST", "/api/auth/logout", {}).then(function () { USER = null; ME = null; updateHeader(); d.close(); renderBooking(); loadSlots(); }); });
+  $("#cx-del", d).addEventListener("click", function () {
+    var p = prompt("Para borrar tu cuenta y tus puntos escribe tu contraseña:");
+    if (!p) return;
+    api("POST", "/api/auth/delete", { password: p }).then(function () { USER = null; ME = null; updateHeader(); d.close(); renderBooking(); loadSlots(); }).catch(function (e) { msg(m, e.message, "err"); });
+  });
+}
+
+function updateHeader() {
+  document.querySelectorAll("[data-account-btn]").forEach(function (b) {
+    b.textContent = USER ? "Mi club" + (ME ? " · " + ME.points + " pts" : "") : "Entrar";
+  });
+}
+
+/* ---------------------------------------------------------------- CITA POR ENLACE Y RESET */
+function handleParams() {
+  var p = new URLSearchParams(location.search), cita = p.get("cita"), reset = p.get("reset");
+  if (cita && /^[0-9a-f]{24}$/.test(cita)) {
+    api("GET", "/api/booking?code=" + cita).then(function (r) {
+      var b = r.booking, canc = r.canCancel;
+      var d = showDlg(top("Tu cita") + "<p style='font-size:1.1rem;line-height:1.6'><b>" + esc(b.whenText) + "</b><br>" + esc(b.service) + " · " + eur(b.price_cents) + "<br>Con " + esc(b.barber) + "</p>" +
+        (b.status === "cancelled" ? "<p class='bx-msg err'>Esta cita está cancelada.</p>" : b.status !== "booked" ? "<p class='bx-msg'>Esta cita ya ha pasado.</p>" : canc ? "<button type='button' class='bx-btn' id='ct-cancel' style='width:100%;margin-top:.8rem'>Cancelar mi cita</button>" : "<p class='bx-msg'>Faltan menos de " + Math.round(r.cancelMin / 60) + " h: para cancelar llámanos.</p>") + "<p id='ct-msg' class='bx-msg' role='status'></p>");
+      var c = $("#ct-cancel", d);
+      if (c) c.addEventListener("click", function () { api("POST", "/api/cancel", { code: cita }).then(function () { msg($("#ct-msg", d), "Cita cancelada. Gracias por avisar.", "ok"); c.hidden = true; }).catch(function (e) { msg($("#ct-msg", d), e.message, "err"); }); });
+    }).catch(function () { showDlg(top("Tu cita") + "<p class='bx-msg err'>No hemos encontrado esa cita.</p>"); });
+    history.replaceState(null, "", location.pathname);
+  } else if (reset && /^[0-9a-f]{64}$/.test(reset)) {
+    var d = showDlg(top("Nueva contraseña") + "<form id='rs'><label class='bx-lab' for='rs-p' style='margin-top:0'>Contraseña nueva <span class='bx-small'>(mínimo 8 caracteres)</span></label><input id='rs-p' class='bx-in' type='password' autocomplete='new-password' maxlength='128'><p id='rs-m' class='bx-msg' role='status'></p><button class='bx-btn' style='width:100%'>Guardar</button></form>");
+    $("#rs", d).addEventListener("submit", function (e) {
+      e.preventDefault();
+      api("POST", "/api/auth/reset", { token: reset, password: $("#rs-p", d).value }).then(function () { history.replaceState(null, "", location.pathname); renderAuth("login", "Contraseña cambiada. Ya puedes entrar."); }).catch(function (er) { msg($("#rs-m", d), er.message, "err"); });
+    });
+  } else if (p.get("ref")) {
+    // Llega recomendado por un amigo: se abre el registro con su código guardado
+    if (!USER) renderAuth("register");
+  }
+}
+
+/* ---------------------------------------------------------------- Club (sección) y carga perezosa de "Encuentra tu corte" */
+function renderClub() {
+  var el = $("#club-rewards");
+  if (el) el.innerHTML = CFG.rewards.map(function (r) { return "<span><b>" + r.cost + "</b> pts · " + esc(r.name) + "</span>"; }).join("");
+  var pe = $("#club-ppe"); if (pe) pe.textContent = CFG.rules.pointsPerEuro + " pt por €";
+  var wp = $("#club-welcome"); if (wp) wp.textContent = CFG.rules.welcomePoints + " puntos";
+  var rf = $("#club-ref"); if (rf) rf.textContent = CFG.rules.referralPoints + " puntos";
+}
+function lazyCortes() {
+  var sec = $("#cortes"); if (!sec) return;
+  var loaded = false;
+  function load() {
+    if (loaded) return; loaded = true;
+    var s = document.createElement("script"); s.src = "cortes.js"; s.defer = true; document.body.appendChild(s);
+  }
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { io.disconnect(); load(); } }, { rootMargin: "600px" });
+    io.observe(sec);
+  } else { load(); }
+}
+window.BB = { api: api, esc: esc, eur: eur, msg: msg, getConfig: function () { return CFG; }, getUser: function () { return USER; }, openAccount: openAccount,
+  // Cortes: preselecciona nota y lleva a reservas
+  chooseCut: function (name) { S.note = name; var a = $("#reservas"); if (a) a.scrollIntoView({ behavior: "smooth" }); var box = $("#bk-cutnote"); if (box) { box.hidden = false; box.textContent = "Corte elegido: " + name; } } };
+
+/* ---------------------------------------------------------------- arranque */
+function wireHeader() {
+  document.querySelectorAll("[data-account-btn]").forEach(function (b) { b.addEventListener("click", function () { openAccount(); }); });
+  document.querySelectorAll("[data-open-register]").forEach(function (b) { b.addEventListener("click", function () { USER ? renderAccount() : renderAuth("register"); }); });
+}
+function start() {
+  wireHeader();
+  lazyCortes();
+  Promise.all([api("GET", "/api/config"), api("GET", "/api/me").catch(function () { return { user: null }; })]).then(function (r) {
+    CFG = r[0]; USER = r[1].user; ME = r[1].user ? r[1] : null;
+    document.documentElement.classList.add("has-api");
+    updateHeader(); renderClub(); initBooking(); handleParams();
+  }).catch(function () {
+    // Sin servidor (por ejemplo, solo páginas estáticas): se mantiene la reserva por WhatsApp y se ocultan cuenta y club
+    document.querySelectorAll("[data-needs-api]").forEach(function (el) { el.hidden = true; });
+    lazyCortes();
+  });
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
+})();

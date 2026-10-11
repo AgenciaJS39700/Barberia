@@ -1,0 +1,28 @@
+# Infinity Barber · web con reservas, club y "Encuentra tu corte"
+
+Cloudflare Worker + D1 (`barberia`) + correos con Brevo. Todo gratis en el plan free.
+
+## Qué incluye
+- **Reservas reales** (`#reservas`): servicio → barbero → día → hora libre. Sin dobles reservas (comprobación atómica en la base de datos), antelación mínima, cancelación por enlace hasta 2 h antes, límite de 3 citas pendientes por teléfono.
+- **Correos**: confirmación con enlace para cancelar, recordatorio 24 h y 2 h antes (Cron cada 15 min), aviso al dueño por cada cita nueva o cancelada.
+- **Cuentas y Club** (`#club`): registro, login, recuperar contraseña, borrar cuenta; puntos de bienvenida y por euro gastado, premios canjeables con código, puntos por recomendar a un amigo.
+- **Encuentra tu corte** (`#cortes`): galería de 111 estilos con filtros, test de 5 preguntas, análisis de la forma de cara en el móvil (la foto no se sube) y probador con IA (apagado).
+- **Panel** `/admin.html`: agenda del día, citas por teléfono, bloqueos, avisos por WhatsApp, clientes y puntos, canjes, ajustes (servicios, barberos, premios, horario, reglas) y resumen.
+- Si el servidor no responde, la web sigue funcionando con la reserva por WhatsApp de siempre.
+
+## Puesta en marcha (una vez)
+1. Cloudflare → Worker `barberia` → Settings → Variables and Secrets → añadir los secretos:
+   - `ADMIN_TOKEN`: contraseña del panel `/admin.html` (larga y única).
+   - `BREVO_API_KEY`: para enviar correos (sin ella todo funciona, pero no salen correos).
+2. La base de datos `barberia` ya está creada con las tablas y los datos de ejemplo (`schema.sql`, `seed.sql`).
+3. Cambiar en `wrangler.jsonc` los datos reales del cliente (teléfono, WhatsApp, correos, dirección) y en el panel → Ajustes los servicios, barberos y horario.
+4. Sin dominio propio verificado en Brevo (SPF/DKIM/DMARC) los correos pueden ir a spam.
+
+## Fotos de los cortes
+En `cortes.js` poner `BB.photos = true` y subir `img/cortes/<id>.webp` (el `id` aparece en el catálogo, p. ej. `crop-low.webp`). Mientras tanto se muestran ilustraciones.
+
+## Probador con IA (apagado por defecto: cuesta dinero por uso)
+Para activarlo: secreto `FAL_KEY` y variable `TRYON=1`. Solo para socios con sesión, máx. 2 pruebas/día por socio (`TRYON_DAILY`) y 30 al día en total (`TRYON_GLOBAL_DAILY`). El texto del peinado lo fija el servidor. Aviso legal: la foto se envía a un tercero (fal.ai); hay casilla de consentimiento y debe constar en la política de privacidad.
+
+## Archivos
+`index.html` · `app.js` · `app.css` · `cortes.js` · `admin.html` · `worker.js` · `wrangler.jsonc` · `schema.sql` · `seed.sql`

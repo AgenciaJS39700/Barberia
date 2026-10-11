@@ -1,0 +1,20 @@
+{
+  "name": "barberia",
+  "main": "worker.js",
+  "compatibility_date": "2026-04-04",
+  "assets": { "directory": "./", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "barberia", "database_id": "010f5fd2-18c6-4726-9b09-771542a2455b" }
+  ],
+  "triggers": { "crons": ["*/15 * * * *"] },
+  "vars": {
+    "SHOP_NAME": "Infinity Barber",
+    "MAIL_FROM": "agencia39700@gmail.com",
+    "MAIL_FROM_NAME": "Infinity Barber",
+    "OWNER_EMAIL": "agencia39700@gmail.com",
+    "SHOP_PHONE": "+34 942 00 11 22",
+    "SHOP_WHATSAPP": "34611223344",
+    "SHOP_ADDRESS": "Calle Victorina Gaínza 4, Castro Urdiales"
+  },
+  "observability": { "enabled": true }
+}

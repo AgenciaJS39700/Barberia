@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Panel · Infinity Barber</title>
+<link rel="stylesheet" href="app.css">
+<style>
+body{margin:0;background:#0f0f10;color:#f5f1e8;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.4}
+main{max-width:980px;margin:0 auto;padding:1rem 1rem 4rem}
+h1{font-size:1.2rem;letter-spacing:.12em;text-transform:uppercase;color:#E6C57A;margin:.2rem 0 1rem}
+h2{font-size:.85rem;letter-spacing:.14em;text-transform:uppercase;color:#C9A24B;margin:1.6rem 0 .6rem}
+.bar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:1rem}
+.row{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end;margin:.6rem 0}
+.item{border:1px solid #2c2c2f;background:#1d1d1f;border-radius:.9rem;padding:.8rem 1rem;margin:.5rem 0;display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between}
+.item small{color:#a8a29a;display:block}
+.tag{font-size:.7rem;font-weight:800;border-radius:99px;padding:.15rem .55rem;border:1px solid #2c2c2f}
+.tag.done{color:#7BC47F;border-color:#7BC47F}.tag.noshow{color:#E07A6B;border-color:#E07A6B}.tag.cancelled{color:#a8a29a}
+.acts{display:flex;flex-wrap:wrap;gap:.4rem}
+.acts button,.acts a{min-height:38px;font-size:.8rem;padding:0 .8rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.6rem}
+.stat{background:#1d1d1f;border:1px solid #2c2c2f;border-radius:.9rem;padding:.8rem}.stat b{display:block;font-size:1.6rem;color:#E6C57A}
+table{width:100%;border-collapse:collapse}td,th{padding:.4rem .3rem;text-align:left;font-size:.85rem}
+input,select{min-width:0}
+</style>
+</head>
+<body>
+<main>
+<h1>Infinity Barber · Panel</h1>
+<div id="login" class="cx" style="max-width:360px">
+<label class="bx-lab" for="tk">Contraseña del panel</label><input id="tk" class="bx-in" type="password" autocomplete="current-password">
+<p id="lm" class="bx-msg" role="status"></p><button id="lg" type="button" class="bx-btn" style="width:100%">Entrar</button>
+</div>
+<div id="app" hidden>
+<div class="bar" role="tablist" id="tabs"></div>
+<div id="view"></div>
+</div>
+</main>
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s)};
+var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
+var eur=function(c){return (c/100).toFixed(2).replace(".",",")+" €"};
+var TOKEN=""; try{TOKEN=sessionStorage.getItem("bbt")||""}catch(e){}
+var TAB="agenda",DATE=new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Madrid"}).format(new Date()),CAT=null;
+function api(m,p,b){return fetch("/api/admin/"+p,{method:m,headers:Object.assign({"x-admin-token":TOKEN},b?{"content-type":"application/json"}:{}),body:b?JSON.stringify(b):undefined}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok){var e=new Error(j.error||"Error");e.status=r.status;throw e}return j})})}
+function addDays(d,n){var o=new Date(d+"T00:00:00Z");o.setUTCDate(o.getUTCDate()+n);return o.toISOString().slice(0,10)}
+function say(t){alert(t)}
+var TABSL=[["agenda","Agenda"],["avisos","Avisos WhatsApp"],["clientes","Clientes y puntos"],["canjes","Canjes"],["ajustes","Ajustes"],["resumen","Resumen"]];
+function shell(){$("#login").hidden=true;$("#app").hidden=false;$("#tabs").innerHTML=TABSL.map(function(t){return "<button type='button' class='bx-chip' data-t='"+t[0]+"' aria-pressed='"+(TAB===t[0])+"'>"+t[1]+"</button>"}).join("");
+ document.querySelectorAll("#tabs [data-t]").forEach(function(b){b.addEventListener("click",function(){TAB=b.dataset.t;shell();show()})});show()}
+function show(){var v=$("#view");v.innerHTML="Cargando…";({agenda:agenda,avisos:avisos,clientes:clientes,canjes:canjes,ajustes:ajustes,resumen:resumen})[TAB](v).catch(function(e){if(e.status===401){try{sessionStorage.removeItem("bbt")}catch(x){}location.reload()}else v.innerHTML="<p class='bx-msg err'>"+esc(e.message)+"</p>"})}
+function catalog(){return CAT?Promise.resolve(CAT):api("GET","catalog").then(function(c){CAT=c;return c})}
+
+function agenda(v){return Promise.all([api("GET","agenda?date="+DATE),catalog()]).then(function(r){var a=r[0],c=r[1];
+ var tags={booked:"",done:"<span class='tag done'>Realizada</span>",noshow:"<span class='tag noshow'>No vino</span>",cancelled:"<span class='tag cancelled'>Cancelada</span>"};
+ v.innerHTML="<div class='bar'><button class='bx-ghost' id='pv'>←</button><input id='dt' type='date' class='bx-in' style='width:auto;margin:0' value='"+DATE+"'><button class='bx-ghost' id='nx'>→</button><button class='bx-ghost' id='td'>Hoy</button></div>"+
+ (a.bookings.length?a.bookings.map(function(b){return "<div class='item'><div><b>"+esc(b.start_at.slice(11))+"–"+esc(b.end_at.slice(11))+" · "+esc(b.name)+"</b> "+(tags[b.status]||"")+"<small>"+esc(b.service_name)+" · "+eur(b.price_cents)+" · "+esc(b.barber)+" · "+esc(b.phone)+(b.email?" · "+esc(b.email):"")+(b.user_id?" · socio":"")+(b.source==="mostrador"?" · mostrador":"")+(b.note?"<br>Corte: "+esc(b.note):"")+"</small></div><div class='acts'>"+
+  (b.status==="booked"?"<button class='bx-btn' data-s='done' data-id='"+b.id+"'>Realizada</button><button class='bx-ghost' data-s='noshow' data-id='"+b.id+"'>No vino</button><button class='bx-ghost' data-s='cancelled' data-id='"+b.id+"'>Cancelar</button>":"<button class='bx-ghost' data-s='booked' data-id='"+b.id+"'>Reabrir</button>")+"</div></div>"}).join(""):"<p class='bx-small'>Sin citas este día.</p>")+
+ (a.blocks.length?"<h2>Bloqueos</h2>"+a.blocks.map(function(b){return "<div class='item'><span>"+esc(b.start_at)+" → "+esc(b.end_at.slice(11))+" · "+esc(b.note||"Bloqueado")+"</span><button class='bx-ghost' data-ub='"+b.id+"'>Quitar</button></div>"}).join(""):"")+
+ "<h2>Nueva cita (teléfono o mostrador)</h2><div class='row'><div><label class='bx-lab'>Nombre</label><input id='mn' class='bx-in'></div><div><label class='bx-lab'>Teléfono</label><input id='mp' class='bx-in' type='tel'></div><div><label class='bx-lab'>Servicio</label><select id='ms' class='bx-in'>"+c.services.filter(function(s){return s.active}).map(function(s){return "<option value='"+s.id+"'>"+esc(s.name)+"</option>"}).join("")+"</select></div><div><label class='bx-lab'>Barbero</label><select id='mb' class='bx-in'>"+c.barbers.filter(function(s){return s.active}).map(function(s){return "<option value='"+s.id+"'>"+esc(s.name)+"</option>"}).join("")+"</select></div><div><label class='bx-lab'>Hora</label><input id='mh' type='time' class='bx-in' step='900'></div><div><button class='bx-btn' id='mk' style='width:100%'>Crear</button></div></div>"+
+ "<h2>Bloquear horas</h2><div class='row'><div><label class='bx-lab'>Desde</label><input id='bf' type='time' class='bx-in'></div><div><label class='bx-lab'>Hasta</label><input id='bt' type='time' class='bx-in'></div><div><label class='bx-lab'>Barbero</label><select id='bb' class='bx-in'><option value=''>Todos</option>"+c.barbers.map(function(s){return "<option value='"+s.id+"'>"+esc(s.name)+"</option>"}).join("")+"</select></div><div><label class='bx-lab'>Motivo</label><input id='bn' class='bx-in' placeholder='Médico, vacaciones…'></div><div><button class='bx-ghost' id='bk' style='width:100%'>Bloquear</button></div></div>";
+ $("#pv").onclick=function(){DATE=addDays(DATE,-1);show()};$("#nx").onclick=function(){DATE=addDays(DATE,1);show()};$("#td").onclick=function(){DATE=new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Madrid"}).format(new Date());show()};$("#dt").onchange=function(e){if(e.target.value){DATE=e.target.value;show()}};
+ v.querySelectorAll("[data-s]").forEach(function(b){b.onclick=function(){api("POST","status",{id:Number(b.dataset.id),status:b.dataset.s}).then(show).catch(function(e){say(e.message)})}});
+ v.querySelectorAll("[data-ub]").forEach(function(b){b.onclick=function(){api("POST","unblock",{id:Number(b.dataset.ub)}).then(show)}});
+ $("#mk").onclick=function(){if(!$("#mh").value){say("Elige la hora.");return}api("POST","book",{name:$("#mn").value,phone:$("#mp").value,service:Number($("#ms").value),barber:Number($("#mb").value),start:DATE+" "+$("#mh").value}).then(show).catch(function(e){say(e.message)})};
+ $("#bk").onclick=function(){if(!$("#bf").value||!$("#bt").value){say("Indica desde y hasta.");return}api("POST","block",{start:DATE+" "+$("#bf").value,end:DATE+" "+$("#bt").value,barber:Number($("#bb").value)||null,note:$("#bn").value}).then(show).catch(function(e){say(e.message)})};
+})}
+
+function avisos(v){var d=addDays(new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Madrid"}).format(new Date()),1);return api("GET","reminders?date="+d).then(function(r){
+ v.innerHTML="<h2>Citas de mañana ("+esc(r.date)+")</h2><p class='bx-small'>Los clientes con correo reciben el aviso solos (24 h y 2 h antes). Aquí tienes el botón de WhatsApp para quien prefiera o no dejó correo: se abre WhatsApp con el mensaje escrito.</p>"+
+ (r.items.length?r.items.map(function(i){return "<div class='item'><div><b>"+esc(i.start_at.slice(11))+" · "+esc(i.name)+"</b><small>"+esc(i.service_name)+" · "+esc(i.phone)+"</small></div><a class='bx-btn' href='"+esc(i.link)+"' target='_blank' rel='noopener'>Avisar por WhatsApp</a></div>"}).join(""):"<p class='bx-small'>No hay citas mañana.</p>")})}
+
+function clientes(v){v.innerHTML="<div class='bar'><input id='q' class='bx-in' style='max-width:320px;margin:0' placeholder='Buscar nombre, correo o teléfono'><button class='bx-ghost' id='qs'>Buscar</button></div><div id='cl'></div>";
+ function load(){return api("GET","clientes?q="+encodeURIComponent($("#q").value)).then(function(r){$("#cl").innerHTML=r.clients.length?r.clients.map(function(c){return "<div class='item'><div><b>"+esc(c.name)+"</b> <span class='tag'>"+c.points+" pts</span><small>"+esc(c.email)+(c.phone?" · "+esc(c.phone):"")+" · "+c.visits+" visitas"+(c.noshows?" · "+c.noshows+" no vino":"")+"</small></div><div class='acts'><button class='bx-ghost' data-p='"+c.id+"' data-d='10'>+10</button><button class='bx-ghost' data-p='"+c.id+"' data-d='-10'>−10</button><button class='bx-ghost' data-pc='"+c.id+"'>Otro…</button></div></div>"}).join(""):"<p class='bx-small'>Sin resultados.</p>";
+  document.querySelectorAll("#cl [data-p]").forEach(function(b){b.onclick=function(){api("POST","points",{userId:Number(b.dataset.p),delta:Number(b.dataset.d),reason:"Ajuste del local"}).then(load)}});
+  document.querySelectorAll("#cl [data-pc]").forEach(function(b){b.onclick=function(){var n=prompt("Puntos a sumar (negativo para restar):");if(!n)return;api("POST","points",{userId:Number(b.dataset.pc),delta:Number(n),reason:prompt("Motivo:")||"Ajuste del local"}).then(load).catch(function(e){say(e.message)})}})})}
+ $("#qs").onclick=load;$("#q").onkeydown=function(e){if(e.key==="Enter")load()};return load()}
+
+function canjes(v){return api("GET","redemptions").then(function(r){v.innerHTML="<h2>Premios canjeados</h2><p class='bx-small'>El cliente te enseña su código; pulsa «Entregado» al darle el premio.</p>"+(r.redemptions.length?r.redemptions.map(function(x){return "<div class='item'><div><b>"+esc(x.reward_name)+"</b> <span class='tag'>"+(x.status==="open"?"pendiente":"entregado")+"</span><small>"+esc(x.name)+(x.phone?" · "+esc(x.phone):"")+" · "+esc(x.created_at)+"</small></div><div class='acts'><span class='cx-code'>"+esc(x.code)+"</span>"+(x.status==="open"?"<button class='bx-btn' data-u='"+x.id+"'>Entregado</button>":"")+"</div></div>"}).join(""):"<p class='bx-small'>Nada por ahora.</p>");
+ v.querySelectorAll("[data-u]").forEach(function(b){b.onclick=function(){api("POST","redemption-use",{id:Number(b.dataset.u)}).then(show)}})})}
+
+function ajustes(v){CAT=null;return catalog().then(function(c){
+ var days=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"],order=[1,2,3,4,5,6,0];
+ v.innerHTML="<h2>Servicios</h2>"+c.services.map(function(s){return "<div class='row item' data-svc='"+s.id+"'><div><label class='bx-lab'>Nombre</label><input class='bx-in' data-k='name' value='"+esc(s.name)+"'></div><div><label class='bx-lab'>Minutos</label><input class='bx-in' data-k='minutes' type='number' value='"+s.minutes+"'></div><div><label class='bx-lab'>Precio €</label><input class='bx-in' data-k='price' value='"+(s.price_cents/100)+"'></div><div><label class='bx-lab'>Visible</label><select class='bx-in' data-k='active'><option value='1'"+(s.active?" selected":"")+">Sí</option><option value='0'"+(s.active?"":" selected")+">No</option></select></div><button class='bx-btn' data-save='svc'>Guardar</button></div>"}).join("")+
+ "<div class='row item' data-svc=''><div><input class='bx-in' data-k='name' placeholder='Nuevo servicio'></div><div><input class='bx-in' data-k='minutes' type='number' placeholder='min'></div><div><input class='bx-in' data-k='price' placeholder='€'></div><div></div><button class='bx-ghost' data-save='svc'>Añadir</button></div>"+
+ "<h2>Barberos</h2>"+c.barbers.map(function(s){return "<div class='row item' data-bar='"+s.id+"'><div><input class='bx-in' data-k='name' value='"+esc(s.name)+"'></div><div><select class='bx-in' data-k='active'><option value='1'"+(s.active?" selected":"")+">Activo</option><option value='0'"+(s.active?"":" selected")+">Inactivo</option></select></div><button class='bx-btn' data-save='bar'>Guardar</button></div>"}).join("")+
+ "<div class='row item' data-bar=''><div><input class='bx-in' data-k='name' placeholder='Nuevo barbero'></div><div></div><button class='bx-ghost' data-save='bar'>Añadir</button></div>"+
+ "<h2>Premios del club</h2>"+c.rewards.map(function(s){return "<div class='row item' data-rw='"+s.id+"'><div><input class='bx-in' data-k='name' value='"+esc(s.name)+"'></div><div><input class='bx-in' data-k='cost' type='number' value='"+s.cost+"'></div><div><select class='bx-in' data-k='active'><option value='1'"+(s.active?" selected":"")+">Activo</option><option value='0'"+(s.active?"":" selected")+">Oculto</option></select></div><button class='bx-btn' data-save='rw'>Guardar</button></div>"}).join("")+
+ "<div class='row item' data-rw=''><div><input class='bx-in' data-k='name' placeholder='Nuevo premio'></div><div><input class='bx-in' data-k='cost' type='number' placeholder='puntos'></div><div></div><button class='bx-ghost' data-save='rw'>Añadir</button></div>"+
+ "<h2>Horario (formato 10:00-14:00, 16:30-20:30; vacío = cerrado)</h2>"+order.map(function(d){var w=(c.hours[d]||[]).map(function(x){return x[0]+"-"+x[1]}).join(", ");return "<div class='row'><label class='bx-lab' style='margin:0'>"+days[d]+"</label><input class='bx-in' data-h='"+d+"' value='"+esc(w)+"' style='grid-column:span 2'></div>"}).join("")+"<button class='bx-btn' id='sh'>Guardar horario</button>"+
+ "<h2>Reglas</h2><div class='row'>"+[["stepMin","Intervalo entre citas (min)"],["leadMin","Antelación mínima (min)"],["cancelMin","Cancelar hasta (min antes)"],["maxDays","Días reservables"],["pointsPerEuro","Puntos por euro"],["welcomePoints","Puntos de bienvenida"],["referralPoints","Puntos por recomendar"]].map(function(k){return "<div><label class='bx-lab'>"+k[1]+"</label><input class='bx-in' data-r='"+k[0]+"' type='number' value='"+c.rules[k[0]]+"'></div>"}).join("")+"</div><button class='bx-btn' id='sr'>Guardar reglas</button>";
+ function val(row,k){var e=row.querySelector("[data-k="+k+"]");return e?e.value:""}
+ v.querySelectorAll("[data-save]").forEach(function(b){b.onclick=function(){var row=b.closest(".item"),t=b.dataset.save,body,path;
+  if(t==="svc"){path="service";body={id:Number(row.dataset.svc)||undefined,name:val(row,"name"),minutes:Number(val(row,"minutes")),price:val(row,"price"),active:val(row,"active")!=="0"}}
+  if(t==="bar"){path="barber";body={id:Number(row.dataset.bar)||undefined,name:val(row,"name"),active:val(row,"active")!=="0"}}
+  if(t==="rw"){path="reward";body={id:Number(row.dataset.rw)||undefined,name:val(row,"name"),cost:Number(val(row,"cost")),active:val(row,"active")!=="0"}}
+  api("POST",path,body).then(function(){CAT=null;show()}).catch(function(e){say(e.message)})}});
+ $("#sh").onclick=function(){var h={};document.querySelectorAll("[data-h]").forEach(function(i){h[i.dataset.h]=i.value.split(",").map(function(p){var m=p.trim().match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);return m?[m[1].padStart(2,"0")+":"+m[2],m[3].padStart(2,"0")+":"+m[4]]:null}).filter(Boolean)});api("POST","hours",{hours:h}).then(function(){say("Horario guardado");CAT=null}).catch(function(e){say(e.message)})};
+ $("#sr").onclick=function(){var b={};document.querySelectorAll("[data-r]").forEach(function(i){b[i.dataset.r]=Number(i.value)});api("POST","rules",b).then(function(){say("Reglas guardadas");CAT=null}).catch(function(e){say(e.message)})};
+})}
+
+function resumen(v){return api("GET","stats").then(function(s){v.innerHTML="<h2>Últimos 30 días</h2><div class='stats'><div class='stat'><b>"+s.total+"</b>citas</div><div class='stat'><b>"+(s.done||0)+"</b>realizadas</div><div class='stat'><b>"+(s.noshow||0)+"</b>no vinieron</div><div class='stat'><b>"+(s.cancelled||0)+"</b>canceladas</div><div class='stat'><b>"+eur(s.revenue||0)+"</b>facturado (realizadas)</div><div class='stat'><b>"+s.clients+"</b>socios del club</div></div>"})}
+
+function login(){TOKEN=$("#tk").value;api("GET","stats").then(function(){try{sessionStorage.setItem("bbt",TOKEN)}catch(e){}shell()}).catch(function(e){$("#lm").textContent=e.status===401?"Contraseña incorrecta.":e.message;$("#lm").className="bx-msg err"})}
+$("#lg").onclick=login;$("#tk").onkeydown=function(e){if(e.key==="Enter")login()};
+if(TOKEN){api("GET","stats").then(shell).catch(function(){})}
+})();
+</script>
+</body>
+</html>
