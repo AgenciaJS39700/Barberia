@@ -26,3 +26,18 @@ Para activarlo: secreto `FAL_KEY` y variable `TRYON=1`. Solo para socios con ses
 
 ## Archivos
 `index.html` · `app.js` · `app.css` · `cortes.js` · `admin.html` · `worker.js` · `wrangler.jsonc` · `schema.sql` · `seed.sql`
+
+
+## Pagos con Stripe (señal o corte pagado)
+
+Funciona con Stripe Checkout (página de pago de Stripe, sin datos de tarjeta en tu web). La cita se confirma cuando Stripe avisa por webhook firmado.
+
+1. **Base de datos (una sola vez, instalaciones ya creadas):** ejecutar `migrations/001_pagos_stripe.sql` en la D1.
+2. **Stripe** (empezar en modo pruebas): Developers → API keys → copiar la *Secret key* (`sk_test_...`).
+3. **Webhook:** Developers → Webhooks → Add endpoint → URL `https://TU-DOMINIO/api/stripe/webhook` → eventos `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` y `checkout.session.expired`. Copiar el *Signing secret* (`whsec_...`).
+4. **Secretos en Cloudflare** (Workers → barberia → Settings → Variables and Secrets, tipo *Secret*): `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET`. Nunca en el repo.
+5. **Elegir cómo cobrar:** `/admin.html` → Ajustes → *Pagos online*: sin pago / el cliente elige / señal obligatoria / pago completo.
+6. **Probar** con la tarjeta `4242 4242 4242 4242` (cualquier fecha futura y CVC). Comprobar: cita pagada en la agenda, correo al cliente y aviso al dueño, cancelación con reembolso.
+7. **Pasar a real** solo cuando todo funcione: cambiar a la clave `sk_live_...`, crear el webhook en modo real y actualizar `STRIPE_WEBHOOK_SECRET`.
+
+Reglas: el hueco queda retenido ~30 min mientras se paga; si no se paga, se libera solo. Cancelar con la antelación de las reglas devuelve el pago completo de forma automática. El dueño puede reembolsar desde la agenda.

@@ -17,7 +17,8 @@ CREATE TABLE bookings (
   start_at TEXT NOT NULL, end_at TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'booked' CHECK (status IN ('booked','done','noshow','cancelled')),
   r24 INTEGER NOT NULL DEFAULT 0, r2 INTEGER NOT NULL DEFAULT 0, points_done INTEGER NOT NULL DEFAULT 0,
-  source TEXT NOT NULL DEFAULT 'web', note TEXT, terms_at TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  source TEXT NOT NULL DEFAULT 'web', note TEXT, terms_at TEXT, created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  pay_status TEXT NOT NULL DEFAULT 'none', pay_cents INTEGER NOT NULL DEFAULT 0, pay_expires TEXT, stripe_session TEXT, stripe_pi TEXT
 );
 CREATE INDEX idx_bk_day ON bookings(barber_id, start_at);
 CREATE INDEX idx_bk_user ON bookings(user_id, start_at);

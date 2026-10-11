@@ -24,6 +24,8 @@ export default {
       if (path === "/api/availability" && request.method === "GET") return await availability(env, url);
       if (path === "/api/book" && request.method === "POST") return await book(request, env, url, ctx);
       if (path === "/api/booking" && request.method === "GET") return await bookingInfo(env, url);
+      if (path === "/api/pay" && request.method === "POST") return await payBooking(request, env, url);
+      if (path === "/api/stripe/webhook" && request.method === "POST") return await stripeWebhook(request, env, ctx);
       if (path === "/api/cancel" && request.method === "POST") return await cancelBooking(request, env, url, ctx);
       if (path === "/api/me" && request.method === "GET") return await me(request, env);
       if (path === "/api/club/redeem" && request.method === "POST") return await redeem(request, env, url);
@@ -116,6 +118,7 @@ async function config(env) {
     services: services.results, barbers: barbers.results, hours, rewards: rewards.results,
     rules: { leadMin: r.leadMin, cancelMin: r.cancelMin, maxDays: r.maxDays, pointsPerEuro: r.pointsPerEuro, welcomePoints: r.welcomePoints, referralPoints: r.referralPoints },
     tryon: tryonEnabled(env),
+    pay: await payPublic(env),
   });
 }
 
@@ -176,11 +179,11 @@ async function currentUser(request, env) {
 async function insertBooking(env, b) {
   // Un solo INSERT ... SELECT atómico: solo entra si el hueco sigue libre (sin solapes con otras citas ni bloqueos)
   const r = await env.DB.prepare(
-    `INSERT INTO bookings (code, user_id, name, phone, email, service_id, service_name, price_cents, barber_id, start_at, end_at, source, terms_at, note)
-     SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14
+    `INSERT INTO bookings (code, user_id, name, phone, email, service_id, service_name, price_cents, barber_id, start_at, end_at, source, terms_at, note, pay_status, pay_cents, pay_expires)
+     SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17
      WHERE NOT EXISTS (SELECT 1 FROM bookings WHERE barber_id = ?9 AND status IN ('booked','done') AND start_at < ?11 AND end_at > ?10)
        AND NOT EXISTS (SELECT 1 FROM blocks WHERE (barber_id IS NULL OR barber_id = ?9) AND start_at < ?11 AND end_at > ?10)`
-  ).bind(b.code, b.user_id || null, b.name, b.phone, b.email || null, b.service_id, b.service_name, b.price_cents, b.barber_id, b.start_at, b.end_at, b.source, b.terms_at || null, b.note || null).run();
+  ).bind(b.code, b.user_id || null, b.name, b.phone, b.email || null, b.service_id, b.service_name, b.price_cents, b.barber_id, b.start_at, b.end_at, b.source, b.terms_at || null, b.note || null, b.pay_status || "none", b.pay_cents || 0, b.pay_expires || null).run();
   return r.meta.changes === 1;
 }
 
@@ -227,13 +230,29 @@ async function book(request, env, url, ctx) {
     chosen = slot.barbers.slice().sort((a, b) => n(a) - n(b))[0];
   }
   const code = randomHex(12);
+  // Pago online: según el modo que haya elegido el dueño (off / optional / deposit / full)
+  const pc = await payPublic(env);
+  const wantsOnline = pc.enabled && service.price_cents > 0 && (pc.mode === "deposit" || pc.mode === "full" || (pc.mode === "optional" && body.pay === "online"));
+  const payCents = wantsOnline ? payAmount(pc, service.price_cents) : 0;
   const ok = await insertBooking(env, {
     code, user_id: user ? user.id : null, name, phone, email: email || (user ? user.email : ""), service_id: service.id, service_name: service.name,
     price_cents: service.price_cents, barber_id: chosen, start_at: start, end_at: end, source: "web", terms_at: new Date().toISOString(), note: String(body.note || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 120),
+    pay_status: wantsOnline ? "pending" : "none", pay_cents: payCents, pay_expires: wantsOnline ? addMin(now, PAY_HOLD_MIN) : null,
   });
   if (!ok) return json({ error: "Ese hueco se acaba de ocupar. Elige otra hora." }, 409);
   const barber = await env.DB.prepare("SELECT name FROM barbers WHERE id = ?1").bind(chosen).first();
   const b = { code, name, phone, email: email || (user ? user.email : ""), service_name: service.name, price_cents: service.price_cents, start_at: start, barber_name: barber ? barber.name : "" };
+  if (wantsOnline) {
+    // El hueco queda retenido mientras se paga. La confirmación (correo y aviso al dueño) llega cuando Stripe confirma el cobro.
+    try {
+      const checkoutUrl = await createCheckout(env, { ...b, pay_cents: payCents, deposit: payCents < service.price_cents }, publicOrigin(env, request), randomHex(8));
+      return json({ ok: true, booking: publicBooking(b), checkoutUrl }, 201);
+    } catch (e) {
+      console.error("Stripe checkout:", e && e.message);
+      await env.DB.prepare("UPDATE bookings SET status = 'cancelled', pay_status = 'expired' WHERE code = ?1").bind(code).run();
+      return json({ error: "No hemos podido iniciar el pago. Inténtalo de nuevo o reserva pagando en la barbería." }, 502);
+    }
+  }
   ctx.waitUntil(Promise.all([
     b.email ? mailBooked(env, b, publicOrigin(env, request)) : Promise.resolve(),
     alertOwner(env, `Nueva cita: ${name} · ${fmtDate(start)}`, `${service.name} con ${b.barber_name}. Tel. ${phone}`, true),
@@ -247,12 +266,12 @@ async function bookingInfo(env, url) {
   const code = url.searchParams.get("code") || "";
   if (!/^[0-9a-f]{24}$/.test(code)) return json({ error: "Cita no encontrada" }, 404);
   const b = await env.DB.prepare(
-    `SELECT b.code, b.name, b.service_name, b.price_cents, b.start_at, b.status, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.code = ?1`
+    `SELECT b.code, b.name, b.service_name, b.price_cents, b.start_at, b.status, b.pay_status, b.pay_cents, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.code = ?1`
   ).bind(code).first();
   if (!b) return json({ error: "Cita no encontrada" }, 404);
   const r = await rules(env);
   const canCancel = b.status === "booked" && diffMin(b.start_at, nowLocal(env)) >= r.cancelMin;
-  return json({ booking: { ...publicBooking(b), status: b.status }, canCancel, cancelMin: r.cancelMin });
+  return json({ booking: { ...publicBooking(b), status: b.status, pay_status: b.pay_status, pay_cents: b.pay_cents }, canCancel, cancelMin: r.cancelMin });
 }
 
 async function cancelBooking(request, env, url, ctx) {
@@ -263,22 +282,33 @@ async function cancelBooking(request, env, url, ctx) {
   const ip = request.headers.get("cf-connecting-ip") || "0.0.0.0";
   if (await tooMany(env, [`cancel:ip:${ip}`], 20)) return TOO_MANY();
   await hit(env, [`cancel:ip:${ip}`]);
-  const b = await env.DB.prepare("SELECT id, name, email, phone, service_name, start_at, status FROM bookings WHERE code = ?1").bind(code).first();
+  const b = await env.DB.prepare("SELECT id, code, name, email, phone, service_name, start_at, status, pay_status, pay_cents, stripe_pi, stripe_session FROM bookings WHERE code = ?1").bind(code).first();
   if (!b || b.status !== "booked") return json({ error: "Esa cita ya no se puede cancelar." }, 409);
   const r = await rules(env);
   if (diffMin(b.start_at, nowLocal(env)) < r.cancelMin) return json({ error: `Faltan menos de ${Math.round(r.cancelMin / 60)} h para tu cita. Llámanos para cancelarla.` }, 409);
-  await env.DB.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?1 AND status = 'booked'").bind(b.id).run();
-  ctx.waitUntil(alertOwner(env, `Cita cancelada: ${b.name} · ${fmtDate(b.start_at)}`, `${b.service_name}. Tel. ${b.phone}`, true).catch(() => {}));
-  return json({ ok: true });
+  const upd = await env.DB.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?1 AND status = 'booked'").bind(b.id).run();
+  if (!upd.meta.changes) return json({ error: "Esa cita ya no se puede cancelar." }, 409);
+  let refunded = false;
+  if (b.pay_status === "paid") {
+    refunded = await refundBooking(env, b);
+    if (!refunded) ctx.waitUntil(alertOwner(env, `Reembolso pendiente: ${b.name}`, `La cita del ${fmtDate(b.start_at)} se canceló pero el reembolso automático falló. Hazlo a mano en Stripe (${b.pay_cents / 100} €).`).catch(() => {}));
+  } else if (b.pay_status === "pending") {
+    await env.DB.prepare("UPDATE bookings SET pay_status = 'expired' WHERE id = ?1").bind(b.id).run();
+    if (b.stripe_session) ctx.waitUntil(stripeCall(env, "POST", `/v1/checkout/sessions/${encodeURIComponent(b.stripe_session)}/expire`, {}).catch(() => {}));
+  }
+  ctx.waitUntil(alertOwner(env, `Cita cancelada: ${b.name} · ${fmtDate(b.start_at)}`, `${b.service_name}. Tel. ${b.phone}${b.pay_status === "paid" ? (refunded ? " · Reembolsado automáticamente." : " · REEMBOLSO MANUAL PENDIENTE.") : ""}`, true).catch(() => {}));
+  return json({ ok: true, refunded, paid: b.pay_status === "paid" });
 }
 
 /* ------------------------------------------------------------------ recordatorios (Cron) */
 async function sendReminders(env) {
   const now = nowLocal(env);
+  // Citas con pago pendiente cuyo plazo ha vencido: se cancelan y el hueco vuelve a estar libre
+  await env.DB.prepare("UPDATE bookings SET status = 'cancelled', pay_status = 'expired' WHERE status = 'booked' AND pay_status = 'pending' AND pay_expires IS NOT NULL AND pay_expires < ?1").bind(now).run();
   // 24 h antes: citas entre dentro de 2 h y dentro de 25 h aún sin recordatorio de 24 h
   const due24 = await env.DB.prepare(
     `SELECT b.id, b.code, b.name, b.email, b.service_name, b.price_cents, b.start_at, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id
-     WHERE b.status = 'booked' AND b.r24 = 0 AND b.email IS NOT NULL AND b.email != '' AND b.start_at > ?1 AND b.start_at <= ?2`
+     WHERE b.status = 'booked' AND b.pay_status != 'pending' AND b.r24 = 0 AND b.email IS NOT NULL AND b.email != '' AND b.start_at > ?1 AND b.start_at <= ?2`
   ).bind(addMin(now, 120), addMin(now, 25 * 60)).all();
   for (const b of due24.results) {
     const claimed = await env.DB.prepare("UPDATE bookings SET r24 = 1 WHERE id = ?1 AND r24 = 0").bind(b.id).run();
@@ -287,7 +317,7 @@ async function sendReminders(env) {
   // 2 h antes
   const due2 = await env.DB.prepare(
     `SELECT b.id, b.code, b.name, b.email, b.service_name, b.price_cents, b.start_at, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id
-     WHERE b.status = 'booked' AND b.r2 = 0 AND b.email IS NOT NULL AND b.email != '' AND b.start_at > ?1 AND b.start_at <= ?2`
+     WHERE b.status = 'booked' AND b.pay_status != 'pending' AND b.r2 = 0 AND b.email IS NOT NULL AND b.email != '' AND b.start_at > ?1 AND b.start_at <= ?2`
   ).bind(now, addMin(now, 135)).all();
   for (const b of due2.results) {
     const claimed = await env.DB.prepare("UPDATE bookings SET r2 = 1, r24 = 1 WHERE id = ?1 AND r2 = 0").bind(b.id).run();
@@ -549,7 +579,7 @@ async function admin(request, env, url, ctx) {
   if (route === "agenda" && !post) {
     const date = DATE_RE.test(q.get("date") || "") ? q.get("date") : nowLocal(env).slice(0, 10);
     const [bk, bl] = await Promise.all([
-      env.DB.prepare(`SELECT b.id, b.code, b.name, b.phone, b.email, b.service_name, b.price_cents, b.start_at, b.end_at, b.status, b.source, b.note, b.user_id, br.name AS barber FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.start_at >= ?1 AND b.start_at < ?2 ORDER BY b.start_at`).bind(date + " 00:00", addDays(date, 1) + " 00:00").all(),
+      env.DB.prepare(`SELECT b.id, b.code, b.name, b.phone, b.email, b.service_name, b.price_cents, b.start_at, b.end_at, b.status, b.source, b.note, b.user_id, b.pay_status, b.pay_cents, br.name AS barber FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.start_at >= ?1 AND b.start_at < ?2 ORDER BY b.start_at`).bind(date + " 00:00", addDays(date, 1) + " 00:00").all(),
       env.DB.prepare("SELECT id, barber_id, start_at, end_at, note FROM blocks WHERE start_at < ?2 AND end_at > ?1 ORDER BY start_at").bind(date + " 00:00", addDays(date, 1) + " 00:00").all(),
     ]);
     return json({ date, bookings: bk.results, blocks: bl.results });
@@ -689,7 +719,143 @@ async function admin(request, env, url, ctx) {
     await env.DB.prepare("INSERT INTO settings (k, v) VALUES ('rules', ?1) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(JSON.stringify(next)).run();
     return json({ ok: true });
   }
+  if (route === "pay" && !post) {
+    const c = { ...PAY_DEFAULT, ...(await setting(env, "pay", {})) };
+    const key = String(env.STRIPE_SECRET_KEY || "");
+    return json({ mode: c.mode, depositCents: c.depositCents, stripe: payEnabled(env), live: /^(sk|rk)_live_/.test(key) });
+  }
+  if (route === "pay" && post) {
+    const mode = String(body.mode), dep = Math.round(Number(body.depositCents));
+    if (!["off", "optional", "deposit", "full"].includes(mode)) return json({ error: "Modo de pago no válido." }, 400);
+    if (!Number.isFinite(dep) || dep < 100 || dep > 5000) return json({ error: "La señal debe estar entre 1 € y 50 €." }, 400);
+    await env.DB.prepare("INSERT INTO settings (k, v) VALUES ('pay', ?1) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(JSON.stringify({ mode, depositCents: dep })).run();
+    return json({ ok: true });
+  }
+  if (route === "refund" && post) {
+    const b = await env.DB.prepare("SELECT id, code, status, pay_status, stripe_pi FROM bookings WHERE id = ?1").bind(Number(body.id)).first();
+    if (!b || b.pay_status !== "paid") return json({ error: "Esa cita no tiene un pago que reembolsar." }, 409);
+    if (!(await refundBooking(env, b))) return json({ error: "Stripe no pudo hacer el reembolso. Revísalo en el panel de Stripe." }, 502);
+    if (body.cancel !== false && b.status === "booked") await env.DB.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?1").bind(b.id).run();
+    return json({ ok: true });
+  }
   return json({ error: "No encontrado" }, 404);
+}
+
+/* ------------------------------------------------------------------ pagos (Stripe Checkout) */
+// Cobro en Stripe Checkout (página de Stripe: la web nunca ve ni guarda datos de tarjeta). La cita se confirma cuando Stripe avisa por webhook firmado.
+const PAY_HOLD_MIN = 32; // Stripe exige sesiones de al menos 30 min; el hueco se retiene un poco más
+const PAY_DEFAULT = { mode: "off", depositCents: 500 };
+const payEnabled = (env) => !!(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET);
+async function payPublic(env) {
+  const c = { ...PAY_DEFAULT, ...(await setting(env, "pay", {})) };
+  const enabled = payEnabled(env) && ["optional", "deposit", "full"].includes(c.mode);
+  return { enabled, mode: enabled ? c.mode : "off", depositCents: Math.max(100, Math.min(5000, Number(c.depositCents) || 500)) };
+}
+const payAmount = (pc, priceCents) => (pc.mode === "deposit" ? Math.min(pc.depositCents, priceCents) : priceCents);
+
+function formEncode(obj, prefix, out = []) {
+  for (const [k, v] of Object.entries(obj)) {
+    if (v == null) continue;
+    const key = prefix ? `${prefix}[${k}]` : k;
+    if (typeof v === "object") formEncode(v, key, out); else out.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(v)));
+  }
+  return out;
+}
+async function stripeCall(env, method, path, params, idem) {
+  const headers = { Authorization: "Bearer " + env.STRIPE_SECRET_KEY, "content-type": "application/x-www-form-urlencoded" };
+  if (idem) headers["Idempotency-Key"] = idem;
+  const res = await fetch("https://api.stripe.com" + path, { method, headers, body: method === "GET" ? undefined : formEncode(params || {}).join("&") });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error("Stripe " + res.status + ": " + ((data.error && data.error.message) || ""));
+  return data;
+}
+async function createCheckout(env, b, origin, nonce) {
+  const name = `${b.service_name} · ${fmtDate(b.start_at)}` + (b.deposit ? " (señal)" : "");
+  const sess = await stripeCall(env, "POST", "/v1/checkout/sessions", {
+    mode: "payment", locale: "es", client_reference_id: b.code,
+    success_url: `${origin}/?pago=ok&cita=${b.code}`, cancel_url: `${origin}/?pago=cancel&cita=${b.code}`,
+    expires_at: Math.floor(Date.now() / 1000) + 1860,
+    customer_email: b.email || undefined,
+    metadata: { code: b.code },
+    payment_intent_data: { description: `${shopName(env)} · ${name}`, metadata: { code: b.code } },
+    line_items: { 0: { quantity: 1, price_data: { currency: "eur", unit_amount: b.pay_cents, product_data: { name } } } },
+  }, `co_${b.code}_${nonce}`);
+  await env.DB.prepare("UPDATE bookings SET stripe_session = ?1 WHERE code = ?2").bind(sess.id, b.code).run();
+  return sess.url;
+}
+async function refundBooking(env, b) {
+  try {
+    if (!b.stripe_pi) return false;
+    await stripeCall(env, "POST", "/v1/refunds", { payment_intent: b.stripe_pi, reason: "requested_by_customer" }, `rf_${b.code}`);
+    await env.DB.prepare("UPDATE bookings SET pay_status = 'refunded' WHERE id = ?1").bind(b.id).run();
+    return true;
+  } catch (e) { console.error("reembolso:", e && e.message); return false; }
+}
+
+// Reintentar el pago de una cita que sigue retenida (el cliente cerró la ventana de Stripe)
+async function payBooking(request, env, url) {
+  if (!sameOrigin(request, url)) return json({ error: "Origen no permitido." }, 403);
+  if (!payEnabled(env)) return json({ error: "Pagos no disponibles." }, 503);
+  const code = String((await getJson(request)).code || "");
+  if (!/^[0-9a-f]{24}$/.test(code)) return json({ error: "Cita no encontrada" }, 404);
+  const ip = request.headers.get("cf-connecting-ip") || "0.0.0.0";
+  if (await tooMany(env, [`pay:ip:${ip}`], 15)) return TOO_MANY();
+  await hit(env, [`pay:ip:${ip}`]);
+  const b = await env.DB.prepare("SELECT code, name, email, service_name, start_at, pay_cents, price_cents, pay_status, pay_expires, status, stripe_session FROM bookings WHERE code = ?1").bind(code).first();
+  if (!b || b.status !== "booked" || b.pay_status !== "pending" || !b.pay_expires || b.pay_expires < nowLocal(env)) return json({ error: "El plazo de pago ha vencido. Reserva de nuevo." }, 409);
+  if (b.stripe_session) await stripeCall(env, "POST", `/v1/checkout/sessions/${encodeURIComponent(b.stripe_session)}/expire`, {}).catch(() => {});
+  const checkoutUrl = await createCheckout(env, { ...b, deposit: b.pay_cents < b.price_cents }, publicOrigin(env, request), randomHex(8));
+  await env.DB.prepare("UPDATE bookings SET pay_expires = ?1 WHERE code = ?2 AND pay_status = 'pending'").bind(addMin(nowLocal(env), PAY_HOLD_MIN), code).run();
+  return json({ ok: true, checkoutUrl });
+}
+
+async function verifyStripeSig(secret, header, raw) {
+  const parts = {};
+  for (const kv of String(header || "").split(",")) { const i = kv.indexOf("="); if (i > 0) (parts[kv.slice(0, i).trim()] ||= []).push(kv.slice(i + 1).trim()); }
+  const t = Number((parts.t || [])[0]);
+  if (!t || Math.abs(Date.now() / 1000 - t) > 300) return false;
+  const key = await crypto.subtle.importKey("raw", te.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = hex(await crypto.subtle.sign("HMAC", key, te.encode(`${t}.${raw}`)));
+  return (parts.v1 || []).some((v) => safeEqual(v, mac));
+}
+async function stripeWebhook(request, env, ctx) {
+  if (!payEnabled(env)) return json({ error: "Pagos no configurados" }, 503);
+  const raw = await request.text();
+  if (raw.length > 200000 || !(await verifyStripeSig(env.STRIPE_WEBHOOK_SECRET, request.headers.get("stripe-signature"), raw))) return json({ error: "Firma no válida" }, 400);
+  let ev; try { ev = JSON.parse(raw); } catch { return json({ error: "JSON no válido" }, 400); }
+  const o = (ev && ev.data && ev.data.object) || {};
+  const code = String(o.client_reference_id || (o.metadata && o.metadata.code) || "");
+  if (!/^[0-9a-f]{24}$/.test(code)) return json({ received: true });
+  if (ev.type === "checkout.session.completed" || ev.type === "checkout.session.async_payment_succeeded") {
+    if (o.payment_status === "paid") await markPaid(env, ctx, code, o, publicOrigin(env, request));
+  } else if (ev.type === "checkout.session.expired" || ev.type === "checkout.session.async_payment_failed") {
+    // Solo cuenta la sesión vigente: al reintentar se caduca la anterior y no debe liberar el hueco
+    await env.DB.prepare("UPDATE bookings SET status = 'cancelled', pay_status = 'expired' WHERE code = ?1 AND pay_status = 'pending' AND stripe_session = ?2").bind(code, String(o.id || "")).run();
+  }
+  return json({ received: true });
+}
+async function markPaid(env, ctx, code, o, origin) {
+  const b = await env.DB.prepare(
+    `SELECT b.id, b.code, b.name, b.phone, b.email, b.service_name, b.price_cents, b.start_at, b.pay_status, b.pay_cents, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.code = ?1`
+  ).bind(code).first();
+  if (!b || b.pay_status === "paid" || b.pay_status === "refunded") return;
+  const pi = typeof o.payment_intent === "string" ? o.payment_intent : (o.payment_intent && o.payment_intent.id) || null;
+  if (Number(o.amount_total) !== b.pay_cents || String(o.currency || "eur").toLowerCase() !== "eur") {
+    ctx.waitUntil(alertOwner(env, `Pago con importe inesperado: ${b.name}`, `Stripe cobró ${Number(o.amount_total) / 100} € y se esperaban ${b.pay_cents / 100} €. Revísalo en Stripe (cita ${b.code}).`));
+    return;
+  }
+  const upd = await env.DB.prepare("UPDATE bookings SET pay_status = 'paid', stripe_pi = ?1 WHERE id = ?2 AND status = 'booked' AND pay_status IN ('pending', 'expired')").bind(pi, b.id).run();
+  if (upd.meta.changes) {
+    const info = { ...b, paid_cents: b.pay_cents };
+    ctx.waitUntil(Promise.all([
+      b.email ? mailBooked(env, info, origin) : Promise.resolve(),
+      alertOwner(env, `Nueva cita pagada: ${b.name} · ${fmtDate(b.start_at)}`, `${b.service_name} con ${b.barber_name}. Pagado online: ${b.pay_cents / 100} € de ${b.price_cents / 100} €. Tel. ${b.phone}`, true),
+    ]).catch((e) => console.error("mail pago", e && e.message)));
+  } else {
+    // El pago llegó cuando la cita ya estaba cancelada: se devuelve el dinero
+    const ok = await refundBooking(env, { id: b.id, code: b.code, stripe_pi: pi });
+    ctx.waitUntil(alertOwner(env, `Pago tardío de una cita cancelada: ${b.name}`, ok ? "Se ha reembolsado automáticamente." : `NO se pudo reembolsar automáticamente: hazlo en Stripe (${b.pay_cents / 100} €).`));
+  }
 }
 
 /* ------------------------------------------------------------------ correo (Brevo) */
@@ -718,7 +884,7 @@ function layout(env, title, inner, button) {
 </div><p style="font-size:12px;color:#8d8c88;text-align:center;margin:14px 0 0">${escHtml(shopName(env))}${env.SHOP_ADDRESS ? " · " + escHtml(env.SHOP_ADDRESS) : ""}</p></div></body></html>`;
 }
 function bookingBlock(b) {
-  return `<p style="font-size:15px;line-height:1.6;background:#f6f4f0;padding:14px 16px;border-radius:10px;margin:14px 0"><b>${escHtml(fmtDate(b.start_at))}</b><br>${escHtml(b.service_name)} · ${eur(b.price_cents)}${b.barber_name ? "<br>Con " + escHtml(b.barber_name) : ""}</p>`;
+  return `<p style="font-size:15px;line-height:1.6;background:#f6f4f0;padding:14px 16px;border-radius:10px;margin:14px 0"><b>${escHtml(fmtDate(b.start_at))}</b><br>${escHtml(b.service_name)} · ${eur(b.price_cents)}${b.barber_name ? "<br>Con " + escHtml(b.barber_name) : ""}${b.paid_cents ? `<br>Pagado online: <b>${eur(b.paid_cents)}</b>${b.paid_cents < b.price_cents ? ` · el resto (${eur(b.price_cents - b.paid_cents)}) se paga en la barbería` : " · no tienes que pagar nada más"}` : ""}</p>`;
 }
 function gcal(b) {
   const f = (dt) => dt.replace(/[-: ]/g, "").slice(0, 13) + "00";

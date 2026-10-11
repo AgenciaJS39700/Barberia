@@ -147,6 +147,8 @@ function gallery(p) {
     return (!STATE.kind || c.kind === STATE.kind) && (!STATE.hair || c.hair.indexOf(STATE.hair) >= 0) && (!STATE.len || c.len === STATE.len) && (!STATE.style || c.style === STATE.style);
   });
   if (STATE.face) list = list.slice().sort(function (a, b) { return score(b, STATE.face) - score(a, STATE.face); });
+  // Los cortes con foto real van primero (Array.sort es estable)
+  list = list.slice().sort(function (a, b) { return (hasPhoto(b) ? 1 : 0) - (hasPhoto(a) ? 1 : 0); });
   p.innerHTML = "<div class='cl-filters'>" + chips("kind", { corte: "Cortes", barba: "Barbas" }, "Tipo") + chips("face", FACES, "Tu cara") + chips("hair", HAIRS, "Tu pelo") + chips("len", LENS, "Largo") + chips("style", STYLES, "Estilo") + "</div>" +
     "<p class='cl-count' aria-live='polite'>" + list.length + " de " + CUTS.length + " estilos" + (STATE.face ? " · ordenados para cara " + FACES[STATE.face].toLowerCase() : "") + "</p>" +
     "<div class='cl-grid'>" + list.slice(0, STATE.shown).map(function (c) { return card(c, STATE.face); }).join("") + "</div>" +

@@ -107,3 +107,5 @@ header nav a,header .btn-gold,header [data-account-btn]{white-space:nowrap}
 .cl-body{padding:.75rem .8rem .85rem}.cl-body h4{font-size:.92rem}
 @media (min-width:640px){.cl-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1rem}.cl-body{padding:.9rem 1rem 1rem}.cl-body h4{font-size:1rem}}
 .bx-in,.bx-btn,.bx-ghost{box-sizing:border-box}
+
+.bk-paynote{background:rgba(201,162,75,.08);border:1px solid rgba(201,162,75,.35);border-radius:.9rem;padding:.8rem 1rem;line-height:1.5;margin:.9rem 0 .4rem;font-size:.92rem}

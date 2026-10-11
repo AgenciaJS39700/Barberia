@@ -75,6 +75,7 @@ function renderBooking() {
     "<label class='bx-lab' for='bk-name' style='margin-top:0'>Nombre</label><input id='bk-name' class='bx-in' autocomplete='given-name' maxlength='60' value='" + esc(u.name || "") + "'>" +
     "<label class='bx-lab' for='bk-phone'>Teléfono</label><input id='bk-phone' class='bx-in' type='tel' inputmode='tel' autocomplete='tel' maxlength='20' value='" + esc(u.phone || "") + "'>" +
     "<label class='bx-lab' for='bk-email'>Correo <span class='bx-small'>(para confirmación y recordatorio)</span></label><input id='bk-email' class='bx-in' type='email' autocomplete='email' maxlength='120' value='" + esc(u.email || "") + "'>" +
+    "<div id='bk-pay'></div>" +
     "<label class='bk-terms'><input id='bk-terms' type='checkbox'><span>He leído y acepto la <a href='#privacidad' data-legal-link>Política de Privacidad</a>. Usaremos tus datos solo para gestionar la cita.</span></label>" +
     "<div id='bk-sum' class='bk-sum'></div>" +
     "<p id='bk-cutnote' class='bx-small' " + (S.note ? "" : "hidden") + ">" + (S.note ? "Corte elegido: " + esc(S.note) : "") + "</p><p id='bk-msg' class='bx-msg' role='status' aria-live='polite'></p>" +
@@ -128,9 +129,39 @@ function loadSlots() {
 function updateSummary() {
   var s = CFG.services.filter(function (x) { return x.id === S.service; })[0], b = CFG.barbers.filter(function (x) { return x.id === S.barber; })[0];
   var el = $("#bk-sum", root); if (!el || !s) return;
+  renderPay();
   var d = new Date(S.date + "T00:00:00Z");
   var txt = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(d);
   el.innerHTML = "<b>" + esc(s.name) + "</b> · " + eur(s.price_cents) + "<br>" + esc(txt) + " a las <b>" + esc(S.time) + "</b> · " + (b ? "con " + esc(b.name) : "con el primer barbero libre");
+}
+
+/* Pago online (Stripe Checkout): modos off / optional / deposit / full que fija el dueño en el panel */
+function payInfo() {
+  var P = CFG.pay; if (!P || !P.enabled) return null;
+  var s = CFG.services.filter(function (x) { return x.id === S.service; })[0]; if (!s || s.price_cents <= 0) return null;
+  var online = P.mode === "deposit" || P.mode === "full" || (P.mode === "optional" && S.pay === "online");
+  return { P: P, s: s, online: online, amt: P.mode === "deposit" ? Math.min(P.depositCents, s.price_cents) : s.price_cents };
+}
+function setGoLabel() {
+  var go = $("#bk-go", root), i = payInfo(); if (!go) return;
+  go.textContent = i && i.online ? "Pagar " + eur(i.amt) + " y confirmar" : "Confirmar cita";
+}
+function renderPay() {
+  var el = $("#bk-pay", root); if (!el) return;
+  var i = payInfo();
+  if (!i) { el.innerHTML = ""; setGoLabel(); return; }
+  var h = Math.round(CFG.rules.cancelMin / 60), pol = "<p class='bx-small'>Cancelación gratuita hasta " + h + " h antes, con reembolso completo.</p>";
+  if (i.P.mode === "optional") {
+    el.innerHTML = "<h3>Forma de pago</h3><div class='bk-svc' role='radiogroup' aria-label='Forma de pago'>" +
+      "<label><input type='radio' name='bk-pay' value='online'" + (S.pay === "online" ? " checked" : "") + "><b>Pagar ahora<small> · tarjeta, Apple Pay o Google Pay</small></b><em>" + eur(i.amt) + "</em></label>" +
+      "<label><input type='radio' name='bk-pay' value='shop'" + (S.pay !== "online" ? " checked" : "") + "><b>Pagar en la barbería<small> · al terminar</small></b><em>" + eur(i.s.price_cents) + "</em></label></div>" + pol;
+    el.querySelectorAll("[name=bk-pay]").forEach(function (r) { r.addEventListener("change", function () { S.pay = r.value; setGoLabel(); }); });
+  } else {
+    el.innerHTML = "<div class='bk-paynote'>" + (i.P.mode === "deposit"
+      ? "Para confirmar la cita se paga ahora una <b>señal de " + eur(i.amt) + "</b> con tarjeta (también Apple Pay o Google Pay). El resto (" + eur(i.s.price_cents - i.amt) + ") se paga en la barbería."
+      : "Para confirmar la cita se paga ahora <b>" + eur(i.amt) + "</b> con tarjeta (también Apple Pay o Google Pay). No tendrás que pagar nada más.") + "</div>" + pol;
+  }
+  setGoLabel();
 }
 
 function submitBooking() {
@@ -140,7 +171,8 @@ function submitBooking() {
   if (phone.replace(/\D/g, "").length < 9) { msg(m, "Escribe un teléfono válido.", "err"); $("#bk-phone", root).focus(); return; }
   if (!$("#bk-terms", root).checked) { msg(m, "Acepta la política de privacidad para continuar.", "err"); return; }
   btn.disabled = true; msg(m, "Reservando…");
-  api("POST", "/api/book", { name: name, phone: phone, email: email, service: S.service, barber: S.barber, start: S.date + " " + S.time, terms: true, note: S.note || "" }).then(function (r) {
+  api("POST", "/api/book", { name: name, phone: phone, email: email, service: S.service, barber: S.barber, start: S.date + " " + S.time, terms: true, note: S.note || "", pay: S.pay === "online" ? "online" : "shop" }).then(function (r) {
+    if (r.checkoutUrl) { msg(m, "Te llevamos al pago seguro de Stripe…", "ok"); location.href = r.checkoutUrl; return; }
     showBooked(r.booking, !!email);
   }).catch(function (e) {
     btn.disabled = false; msg(m, e.message, "err");
@@ -279,13 +311,7 @@ function updateHeader() {
 function handleParams() {
   var p = new URLSearchParams(location.search), cita = p.get("cita"), reset = p.get("reset");
   if (cita && /^[0-9a-f]{24}$/.test(cita)) {
-    api("GET", "/api/booking?code=" + cita).then(function (r) {
-      var b = r.booking, canc = r.canCancel;
-      var d = showDlg(top("Tu cita") + "<p style='font-size:1.1rem;line-height:1.6'><b>" + esc(b.whenText) + "</b><br>" + esc(b.service) + " · " + eur(b.price_cents) + "<br>Con " + esc(b.barber) + "</p>" +
-        (b.status === "cancelled" ? "<p class='bx-msg err'>Esta cita está cancelada.</p>" : b.status !== "booked" ? "<p class='bx-msg'>Esta cita ya ha pasado.</p>" : canc ? "<button type='button' class='bx-btn' id='ct-cancel' style='width:100%;margin-top:.8rem'>Cancelar mi cita</button>" : "<p class='bx-msg'>Faltan menos de " + Math.round(r.cancelMin / 60) + " h: para cancelar llámanos.</p>") + "<p id='ct-msg' class='bx-msg' role='status'></p>");
-      var c = $("#ct-cancel", d);
-      if (c) c.addEventListener("click", function () { api("POST", "/api/cancel", { code: cita }).then(function () { msg($("#ct-msg", d), "Cita cancelada. Gracias por avisar.", "ok"); c.hidden = true; }).catch(function (e) { msg($("#ct-msg", d), e.message, "err"); }); });
-    }).catch(function () { showDlg(top("Tu cita") + "<p class='bx-msg err'>No hemos encontrado esa cita.</p>"); });
+    showCita(cita, p.get("pago"), 0);
     history.replaceState(null, "", location.pathname);
   } else if (reset && /^[0-9a-f]{64}$/.test(reset)) {
     var d = showDlg(top("Nueva contraseña") + "<form id='rs'><label class='bx-lab' for='rs-p' style='margin-top:0'>Contraseña nueva <span class='bx-small'>(mínimo 8 caracteres)</span></label><input id='rs-p' class='bx-in' type='password' autocomplete='new-password' maxlength='128'><p id='rs-m' class='bx-msg' role='status'></p><button class='bx-btn' style='width:100%'>Guardar</button></form>");
@@ -297,6 +323,44 @@ function handleParams() {
     // Llega recomendado por un amigo: se abre el registro con su código guardado
     if (!USER) renderAuth("register");
   }
+}
+
+function showCita(cita, pago, tries) {
+  api("GET", "/api/booking?code=" + cita).then(function (r) {
+    var b = r.booking, pending = b.pay_status === "pending" && b.status === "booked";
+    // Volvemos de Stripe: el aviso de cobro (webhook) puede tardar unos segundos
+    if (pago === "ok" && pending && tries < 8) {
+      if (tries === 0) showDlg(top("Comprobando tu pago") + "<p class='bx-msg' role='status'>Estamos confirmando tu pago con el banco…</p>");
+      setTimeout(function () { showCita(cita, pago, tries + 1); }, 1500); return;
+    }
+    var note = "";
+    if (b.pay_status === "paid") note = "<p class='bx-msg ok'>" + (pago === "ok" ? "¡Pago recibido! " : "") + "Pagado online: " + eur(b.pay_cents) + (b.pay_cents < b.price_cents ? " · el resto (" + eur(b.price_cents - b.pay_cents) + ") en la barbería." : " · no tienes que pagar nada más.") + "</p>";
+    else if (pending && pago === "ok") note = "<p class='bx-msg'>Tu pago está en proceso. Te enviaremos la confirmación por correo en cuanto el banco lo confirme.</p>";
+    else if (pending) note = "<p class='bx-msg err'>" + (pago === "cancel" ? "No se completó el pago. " : "") + "Tu hueco sigue reservado unos minutos: paga para confirmar la cita.</p>";
+    else if (b.pay_status === "refunded") note = "<p class='bx-msg'>Pago reembolsado (" + eur(b.pay_cents) + "). Puede tardar unos días en verse en tu tarjeta.</p>";
+    var actions = "";
+    if (b.status === "cancelled") actions = "<p class='bx-msg err'>Esta cita está cancelada.</p>";
+    else if (b.status !== "booked") actions = "<p class='bx-msg'>Esta cita ya ha pasado.</p>";
+    else {
+      if (pending) actions += "<button type='button' class='bx-btn' id='ct-pay' style='width:100%;margin-top:.8rem'>Pagar ahora</button>";
+      actions += r.canCancel
+        ? "<button type='button' class='" + (pending ? "bx-ghost" : "bx-btn") + "' id='ct-cancel' style='width:100%;margin-top:.8rem'>Cancelar mi cita" + (b.pay_status === "paid" ? " (reembolso completo)" : "") + "</button>"
+        : "<p class='bx-msg'>Faltan menos de " + Math.round(r.cancelMin / 60) + " h: para cancelar llámanos.</p>";
+      actions += "<p id='ct-msg' class='bx-msg' role='status'></p>";
+    }
+    var d = showDlg(top(pago === "ok" && b.pay_status === "paid" ? "¡Cita confirmada!" : "Tu cita") + "<p style='font-size:1.1rem;line-height:1.6'><b>" + esc(b.whenText) + "</b><br>" + esc(b.service) + " · " + eur(b.price_cents) + "<br>Con " + esc(b.barber) + "</p>" + note + actions);
+    var c = $("#ct-cancel", d), pb = $("#ct-pay", d);
+    if (pb) pb.addEventListener("click", function () {
+      pb.disabled = true; msg($("#ct-msg", d), "Abriendo el pago seguro…");
+      api("POST", "/api/pay", { code: cita }).then(function (x) { location.href = x.checkoutUrl; }).catch(function (e) { pb.disabled = false; msg($("#ct-msg", d), e.message, "err"); });
+    });
+    if (c) c.addEventListener("click", function () {
+      api("POST", "/api/cancel", { code: cita }).then(function (x) {
+        msg($("#ct-msg", d), x.paid ? (x.refunded ? "Cita cancelada y pago reembolsado. Puede tardar unos días en verse en tu tarjeta." : "Cita cancelada. Te devolveremos el pago a mano y te avisaremos.") : "Cita cancelada. Gracias por avisar.", "ok");
+        c.hidden = true; if (pb) pb.hidden = true;
+      }).catch(function (e) { msg($("#ct-msg", d), e.message, "err"); });
+    });
+  }).catch(function () { showDlg(top("Tu cita") + "<p class='bx-msg err'>No hemos encontrado esa cita.</p>"); });
 }
 
 /* ---------------------------------------------------------------- Club (sección) y carga perezosa de "Encuentra tu corte" */
