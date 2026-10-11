@@ -67,7 +67,7 @@ dialog.cx::backdrop{background:rgba(0,0,0,.7)}
 .cl-card{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:1.2rem;background:var(--card);overflow:hidden;transition:transform .2s,border-color .2s}
 .cl-card:hover{transform:translateY(-3px);border-color:rgba(201,162,75,.6)}
 .cl-pic{position:relative;aspect-ratio:4/5;background:radial-gradient(circle at 50% 30%,#2a2a2d,#161617);display:flex;align-items:center;justify-content:center;overflow:hidden}
-.cl-pic svg{width:70%;height:auto}.cl-pic img{width:100%;height:100%;object-fit:cover}
+.cl-pic svg{width:70%;height:auto}.cl-pic img{width:100%;height:100%;object-fit:cover;object-position:50% 20%}
 .cl-pic i{position:absolute;left:.6rem;bottom:.5rem;font-size:.65rem;font-style:normal;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
 .cl-body{padding:.9rem 1rem 1rem;display:flex;flex-direction:column;gap:.5rem;flex:1}
 .cl-body h4{font-size:1rem;font-weight:800;line-height:1.2}

@@ -133,9 +133,11 @@ function chips(name, map, label, withAll) {
     Object.keys(map).map(function (k) { return "<button type='button' class='bx-chip' data-f='" + name + "' data-v='" + k + "' aria-pressed='" + (STATE[name] === k) + "'>" + map[k] + "</button>"; }).join("") + "</div>";
 }
 
+function hasPhoto(c) { return BB.photos === true || (BB.photoIds || []).indexOf(c.id) > -1; }
+
 function card(c, face) {
   var s = score(c, face), rec = face && s >= 2;
-  return "<article class='cl-card'><div class='cl-pic'>" + (BB.photos ? "<img loading='lazy' decoding='async' src='img/cortes/" + c.id + ".webp' alt='" + esc(c.name) + "'>" : art(c)) + "<i>Foto próximamente</i></div>" +
+  return "<article class='cl-card'><div class='cl-pic'>" + (hasPhoto(c) ? "<img loading='lazy' decoding='async' src='img/cortes/" + c.id + ".webp' alt='" + esc(c.name) + "'>" : art(c)) + (hasPhoto(c) ? "" : "<i>Foto próximamente</i>") + "</div>" +
     "<div class='cl-body'><h4>" + esc(c.name) + "</h4><div class='cl-tags'>" + (rec ? "<span style='border-color:var(--g)'>★ Para tu cara</span>" : "") + "<span>" + (LENS[c.len] || "") + "</span><span>" + STYLES[c.style] + "</span><span>" + ["", "Fácil", "Medio", "Cuidado"][c.effort] + "</span></div>" +
     "<p>" + esc(c.desc) + "</p><button type='button' class='bx-btn' style='min-height:42px;font-size:.85rem' data-pick='" + esc(c.name) + "'>Quiero este</button></div></article>";
 }
@@ -272,6 +274,7 @@ function tryonTab(p) {
   });
 }
 
-BB.photos = false; // pasar a true cuando se suban las fotos a /img/cortes/<id>.webp
+BB.photos = false; // pasar a true cuando estén TODAS las fotos en /img/cortes/<id>.webp
+BB.photoIds = ["quiff-skin", "side-mid", "buzz-skin", "curly-taper"]; // fotos ya subidas (mientras tanto el resto usa el dibujo)
 render();
 })();
