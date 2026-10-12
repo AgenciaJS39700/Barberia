@@ -119,37 +119,6 @@
 </div>
 </div>
 </section>
-<section id="estilo" class="bg-coal py-14 sm:py-16 lg:py-20">
-<div class="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
-<div class="reveal space-y-5">
-<p class="text-xs font-bold uppercase tracking-[0.25em] text-gold">Guía de degradados</p>
-<h2 class="text-3xl font-black uppercase leading-tight sm:text-4xl">¿Qué fade te va?</h2>
-<p class="leading-relaxed text-mute">Prueba las tres alturas y mira cómo cambia el degradado. Si dudas, en la silla te aconsejamos según tu cara y tu pelo.</p>
-<div class="flex flex-wrap gap-2" role="group" aria-label="Altura del degradado">
-<button type="button" data-fade="low" aria-pressed="false" class="fade-btn min-h-[46px] rounded-full border border-line px-5 text-sm font-bold transition hover:border-gold motion-reduce:transition-none">Low fade</button>
-<button type="button" data-fade="mid" aria-pressed="true" class="fade-btn min-h-[46px] rounded-full border border-line px-5 text-sm font-bold transition hover:border-gold motion-reduce:transition-none">Mid fade</button>
-<button type="button" data-fade="high" aria-pressed="false" class="fade-btn min-h-[46px] rounded-full border border-line px-5 text-sm font-bold transition hover:border-gold motion-reduce:transition-none">High fade</button>
-</div>
-<div class="rounded-2xl border border-line bg-card p-5" aria-live="polite"><h3 id="fade-titulo" class="text-lg font-extrabold text-gold-light">Mid fade</h3><p id="fade-desc" class="mt-2 text-sm leading-relaxed text-mute"></p></div>
-<a id="fade-cta" href="#" target="_blank" rel="noopener" data-cta="whatsapp_fade" class="btn-gold inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 transition focus:outline-none focus-visible:ring-4 focus-visible:ring-gold/40 motion-reduce:transition-none"><svg class="ic h-5 w-5" aria-hidden="true" focusable="false"><use href="#i-scissors"/></svg> Quiero este degradado</a>
-</div>
-<div class="reveal mx-auto aspect-square w-full max-w-sm rounded-3xl border border-line bg-gradient-to-b from-card to-ink p-6 shadow-2xl shadow-black/40"><svg viewBox="0 0 120 120" class="mx-auto h-full w-full" role="img" aria-label="Ilustración de un degradado en la cabeza">
-<defs>
-<linearGradient id="fadeG" gradientUnits="userSpaceOnUse" x1="0" y1="52" x2="0" y2="88"><stop offset="0" stop-color="#2A2420"/><stop offset="1" stop-color="#2A2420" stop-opacity="0"/></linearGradient>
-<filter id="soft" x="-20%" y="-5%" width="140%" height="110%"><feGaussianBlur stdDeviation="1.6"/></filter>
-<clipPath id="headClip"><ellipse cx="60" cy="66" rx="31" ry="40"/></clipPath>
-</defs>
-<ellipse cx="29" cy="70" rx="5" ry="9" fill="#C98F63"/><ellipse cx="91" cy="70" rx="5" ry="9" fill="#C98F63"/>
-<ellipse cx="60" cy="66" rx="31" ry="40" fill="#D9A27A"/>
-<g clip-path="url(#headClip)">
-<g filter="url(#soft)"><rect x="26" y="24" width="17" height="80" rx="8" fill="url(#fadeG)"/><rect x="77" y="24" width="17" height="80" rx="8" fill="url(#fadeG)"/></g>
-<path d="M28 52 Q30 20 60 20 Q90 20 92 52 Q84 38 60 36 Q36 38 28 52Z" fill="#2A2420"/>
-</g>
-<circle cx="50" cy="66" r="2.2" fill="#3A2A20"/><circle cx="70" cy="66" r="2.2" fill="#3A2A20"/>
-<path d="M54 84 q6 4 12 0" stroke="#A9744F" stroke-width="2" fill="none" stroke-linecap="round"/>
-</svg></div>
-</div>
-</section>
 <section id="cortes" class="bg-coal py-14 sm:py-16 lg:py-20">
 <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 <div class="reveal mx-auto max-w-2xl text-center"><p class="text-xs font-bold uppercase tracking-[0.25em] text-gold">Encuentra tu corte</p><h2 class="mt-3 text-3xl font-black uppercase sm:text-4xl">¿Qué corte te va a ti?</h2><p class="mt-3 text-mute">Más de 100 estilos, un test de 1 minuto y un análisis de tu cara en el móvil. Elige y reserva con el corte ya decidido.</p></div>
@@ -457,22 +426,6 @@ var txt = "Hola, quiero reservar cita en Infinity Barber:\n- Servicio: " + s.val
 window.open("https://wa.me/" + WA_NUM + "?text=" + encodeURIComponent(txt), "_blank", "noopener");
 });
 /* Guía de degradados */
-var FADES = {
-low: { y1: 52, y2: 88, t: "Low fade", d: "El degradado empieza bajo, cerca de la oreja y la nuca. Es el más discreto: cambio suave y fácil de llevar." },
-mid: { y1: 42, y2: 72, t: "Mid fade", d: "El degradado arranca a media altura de la cabeza. Equilibrio entre discreción y contraste: el más pedido." },
-high: { y1: 34, y2: 56, t: "High fade", d: "El degradado sube hasta la zona alta de la cabeza. Contraste marcado y un aspecto muy limpio y moderno." }
-};
-var g = document.getElementById("fadeG"), fBtns = Array.prototype.slice.call(document.querySelectorAll("[data-fade]"));
-var fTit = document.getElementById("fade-titulo"), fDes = document.getElementById("fade-desc"), fCta = document.getElementById("fade-cta");
-function setFade(k) {
-var f = FADES[k];
-g.setAttribute("y1", f.y1); g.setAttribute("y2", f.y2);
-fTit.textContent = f.t; fDes.textContent = f.d;
-fBtns.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.fade === k ? "true" : "false"); });
-fCta.href = "https://wa.me/" + WA_NUM + "?text=" + encodeURIComponent("Hola, quiero reservar un degradado (" + f.t + ").");
-}
-fBtns.forEach(function (b) { b.addEventListener("click", function () { setFade(b.dataset.fade); }); });
-setFade("mid");
 })();
 </script>
 <script src="app.js" defer></script>
