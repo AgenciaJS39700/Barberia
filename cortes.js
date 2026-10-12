@@ -116,7 +116,7 @@ function faceIcon(f) {
 }
 
 /* ---------------------------------------------------------------- UI */
-var root = $("#cortes-app"), STATE = { tab: "galeria", face: "", hair: "", len: "", style: "", kind: "", shown: 24 };
+var root = $("#cortes-app"), STATE = { tab: "galeria", face: "", hair: "", len: "", style: "", kind: "", rows: 3 };
 if (!root) return;
 var TABS = [["galeria", "Galería de cortes"], ["test", "Test: ¿qué me va?"], ["cara", "Analizar mi cara"], ["ia", "Probador con IA"]];
 
@@ -142,6 +142,12 @@ function card(c, face) {
     "<p>" + esc(c.desc) + "</p><button type='button' class='bx-btn' style='min-height:42px;font-size:.85rem' data-pick='" + esc(c.name) + "'>Quiero este</button></div></article>";
 }
 
+// Columnas reales de la rejilla (misma regla que app.css) para mostrar siempre filas completas
+function gridCols() {
+  var w = root.clientWidth || window.innerWidth, small = window.innerWidth < 640, min = small ? 160 : 210, gap = small ? 12.8 : 16;
+  return Math.max(1, Math.floor((w + gap) / (min + gap)));
+}
+
 function gallery(p) {
   var list = CUTS.filter(function (c) {
     return (!STATE.kind || c.kind === STATE.kind) && (!STATE.hair || c.hair.indexOf(STATE.hair) >= 0) && (!STATE.len || c.len === STATE.len) && (!STATE.style || c.style === STATE.style);
@@ -149,14 +155,30 @@ function gallery(p) {
   if (STATE.face) list = list.slice().sort(function (a, b) { return score(b, STATE.face) - score(a, STATE.face); });
   // Los cortes con foto real van primero (Array.sort es estable)
   list = list.slice().sort(function (a, b) { return (hasPhoto(b) ? 1 : 0) - (hasPhoto(a) ? 1 : 0); });
+  var step = gridCols(), shown = Math.min(list.length, STATE.rows * step);
   p.innerHTML = "<div class='cl-filters'>" + chips("kind", { corte: "Cortes", barba: "Barbas" }, "Tipo") + chips("face", FACES, "Tu cara") + chips("hair", HAIRS, "Tu pelo") + chips("len", LENS, "Largo") + chips("style", STYLES, "Estilo") + "</div>" +
     "<p class='cl-count' aria-live='polite'>" + list.length + " de " + CUTS.length + " estilos" + (STATE.face ? " · ordenados para cara " + FACES[STATE.face].toLowerCase() : "") + "</p>" +
-    "<div class='cl-grid'>" + list.slice(0, STATE.shown).map(function (c) { return card(c, STATE.face); }).join("") + "</div>" +
-    (list.length > STATE.shown ? "<p style='text-align:center;margin-top:1.4rem'><button type='button' class='bx-ghost' id='cl-more'>Ver más (" + (list.length - STATE.shown) + ")</button></p>" : "") +
+    "<div class='cl-grid'>" + list.slice(0, shown).map(function (x) { return card(x, STATE.face); }).join("") + "</div>" +
+    "<p style='text-align:center;margin-top:1.4rem' id='cl-morewrap'></p>" +
     (list.length ? "" : "<p class='cl-count'>Ningún estilo con esos filtros. Quita alguno.</p>") +
     "<p class='cl-count'>Las imágenes son ilustraciones orientativas; en la barbería te enseñamos cómo te quedaría.</p>";
-  p.querySelectorAll("[data-f]").forEach(function (b) { b.addEventListener("click", function () { STATE[b.dataset.f] = b.dataset.v; STATE.shown = 24; render(); }); });
-  var m = $("#cl-more", p); if (m) m.addEventListener("click", function () { STATE.shown += 24; render(); });
+  p.querySelectorAll("[data-f]").forEach(function (b) { b.addEventListener("click", function () { STATE[b.dataset.f] = b.dataset.v; STATE.rows = 3; render(); }); });
+  var grid = $(".cl-grid", p), mw = $("#cl-morewrap", p);
+  function bindPicks(scope) { scope.querySelectorAll("[data-pick]").forEach(function (b) { b.addEventListener("click", function () { BB.chooseCut(b.dataset.pick); }); }); }
+  function moreBtn() {
+    var left = list.length - shown;
+    mw.innerHTML = (left > 0 ? "<button type='button' class='bx-ghost' id='cl-more'>Ver más cortes (" + left + ")</button>" : "") + (STATE.rows > 3 ? " <button type='button' class='bx-ghost' id='cl-less'>Ver menos</button>" : "");
+    var m = $("#cl-more", mw), l = $("#cl-less", mw);
+    if (m) m.addEventListener("click", function () {
+      STATE.rows += 3;
+      var upto = Math.min(list.length, STATE.rows * step), html = list.slice(shown, upto).map(function (x) { return card(x, STATE.face).replace("class='cl-card'", "class='cl-card cl-in'"); }).join("");
+      var before = grid.children.length; grid.insertAdjacentHTML("beforeend", html); shown = upto; bindPicks(grid);
+      var first = grid.children[before]; if (first && first.scrollIntoView) first.scrollIntoView({ behavior: "smooth", block: "center" });
+      moreBtn();
+    });
+    if (l) l.addEventListener("click", function () { STATE.rows = 3; render(); var s = document.getElementById("cortes"); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); });
+  }
+  moreBtn();
   p.querySelectorAll("[data-pick]").forEach(function (b) { b.addEventListener("click", function () { BB.chooseCut(b.dataset.pick); }); });
 }
 
@@ -235,7 +257,7 @@ function showFace(face, manual) {
   var out = $("#cl-out"), picks = CUTS.filter(function (c) { return c.kind === "corte"; }).sort(function (a, b) { return score(b, face) - score(a, face); }).slice(0, 6);
   out.innerHTML = "<div class='cl-shape' style='margin-top:1.6rem'>" + faceIcon(face) + "<div><b>Cara " + FACES[face].toLowerCase() + "</b><span class='bx-small'>" + (manual ? "" : "Resultado aproximado. Si no te cuadra, elige otra arriba. ") + "Estos son los cortes que mejor te sientan:</span></div></div><div class='cl-grid'>" + picks.map(function (c) { return card(c, face); }).join("") + "</div><p style='text-align:center;margin-top:1.2rem'><button type='button' class='bx-ghost' id='cl-see'>Ver toda la galería para mi cara</button></p>";
   out.querySelectorAll("[data-pick]").forEach(function (b) { b.addEventListener("click", function () { BB.chooseCut(b.dataset.pick); }); });
-  $("#cl-see", out).addEventListener("click", function () { STATE.face = face; STATE.tab = "galeria"; STATE.shown = 24; render(); });
+  $("#cl-see", out).addEventListener("click", function () { STATE.face = face; STATE.tab = "galeria"; STATE.rows = 3; render(); });
   out.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 

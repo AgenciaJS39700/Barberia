@@ -387,6 +387,27 @@ window.BB = { api: api, esc: esc, eur: eur, msg: msg, getConfig: function () { r
   // Cortes: preselecciona nota y lleva a reservas
   chooseCut: function (name) { S.note = name; var a = $("#reservas"); if (a) a.scrollIntoView({ behavior: "smooth" }); var box = $("#bk-cutnote"); if (box) { box.hidden = false; box.textContent = "Corte elegido: " + name; } } };
 
+/* ---------------------------------------------------------------- Barber pole animado (rayas que giran y se aceleran al hacer scroll) */
+function initPoles() {
+  var els = [].slice.call(document.querySelectorAll(".bpole"));
+  if (!els.length || !("IntersectionObserver" in window)) return;
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var off = 0, boost = 0, lastY = window.scrollY, raf = 0, vis = 0;
+  function frame() {
+    var y = window.scrollY, d = Math.abs(y - lastY); lastY = y;
+    boost = Math.max(boost * 0.93, Math.min(d * 0.5, 16));
+    off = (off - (0.45 + boost)) % 100000;
+    els.forEach(function (e) { if (e._v) e.style.setProperty("--off", off.toFixed(1)); });
+    raf = vis > 0 && !document.hidden ? requestAnimationFrame(frame) : 0;
+  }
+  var io = new IntersectionObserver(function (en) {
+    en.forEach(function (x) { if (x.target._v !== x.isIntersecting) { x.target._v = x.isIntersecting; vis += x.isIntersecting ? 1 : -1; } });
+    if (vis > 0 && !raf) { lastY = window.scrollY; raf = requestAnimationFrame(frame); }
+  });
+  els.forEach(function (e) { e._v = false; io.observe(e); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && vis > 0 && !raf) raf = requestAnimationFrame(frame); });
+}
+
 /* ---------------------------------------------------------------- arranque */
 function wireHeader() {
   document.querySelectorAll("[data-account-btn]").forEach(function (b) { b.addEventListener("click", function () { openAccount(); }); });
@@ -394,6 +415,7 @@ function wireHeader() {
 }
 function start() {
   wireHeader();
+  initPoles();
   lazyCortes();
   Promise.all([api("GET", "/api/config"), api("GET", "/api/me").catch(function () { return { user: null }; })]).then(function (r) {
     CFG = r[0]; USER = r[1].user; ME = r[1].user ? r[1] : null;
