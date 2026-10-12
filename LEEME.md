@@ -40,4 +40,6 @@ Funciona con Stripe Checkout (página de pago de Stripe, sin datos de tarjeta en
 6. **Probar** con la tarjeta `4242 4242 4242 4242` (cualquier fecha futura y CVC). Comprobar: cita pagada en la agenda, correo al cliente y aviso al dueño, cancelación con reembolso.
 7. **Pasar a real** solo cuando todo funcione: cambiar a la clave `sk_live_...`, crear el webhook en modo real y actualizar `STRIPE_WEBHOOK_SECRET`.
 
-Reglas: el hueco queda retenido ~30 min mientras se paga; si no se paga, se libera solo. Cancelar con la antelación de las reglas devuelve el pago completo de forma automática. El dueño puede reembolsar desde la agenda.
+Reglas: el hueco queda retenido ~30 min mientras se paga; si no se paga, se libera solo. **El pago online es completo y NO reembolsable**: el cliente acepta una casilla al reservar y solo puede *cambiar la fecha* (hasta las horas de «Cancelar hasta», máx. 2 cambios, desde el enlace del correo o su cuenta). Las citas pagadas en la barbería sí se cancelan gratis. El dueño puede reembolsar una excepción desde la agenda (botón «Reembolsar»). Aviso: revisar con un profesional que esta condición encaja con la normativa de consumo.
+
+Base de datos ya creada: ejecutar también `migrations/002_cambios_de_fecha.sql` (columna `moves`).

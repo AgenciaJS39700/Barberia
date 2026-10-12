@@ -16,5 +16,6 @@
     "SHOP_WHATSAPP": "34611223344",
     "SHOP_ADDRESS": "Calle Victorina Gaínza 4, Castro Urdiales"
   },
+  "keep_vars": true,
   "observability": { "enabled": true }
 }

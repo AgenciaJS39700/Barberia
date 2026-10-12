@@ -25,6 +25,7 @@ export default {
       if (path === "/api/book" && request.method === "POST") return await book(request, env, url, ctx);
       if (path === "/api/booking" && request.method === "GET") return await bookingInfo(env, url);
       if (path === "/api/pay" && request.method === "POST") return await payBooking(request, env, url);
+      if (path === "/api/reschedule" && request.method === "POST") return await rescheduleBooking(request, env, url, ctx);
       if (path === "/api/stripe/webhook" && request.method === "POST") return await stripeWebhook(request, env, ctx);
       if (path === "/api/cancel" && request.method === "POST") return await cancelBooking(request, env, url, ctx);
       if (path === "/api/me" && request.method === "GET") return await me(request, env);
@@ -124,7 +125,7 @@ async function config(env) {
 
 /* ------------------------------------------------------------------ huecos libres */
 // Devuelve, para un día, los huecos libres de un servicio. barberId 0 = cualquiera.
-async function freeSlots(env, date, service, barberId, { ignoreLead = false } = {}) {
+async function freeSlots(env, date, service, barberId, { ignoreLead = false, excludeCode = "" } = {}) {
   const r = await rules(env);
   const hours = await setting(env, "hours", {});
   const windows = hours[String(weekday(date))] || [];
@@ -133,7 +134,7 @@ async function freeSlots(env, date, service, barberId, { ignoreLead = false } = 
   if (!barbers.length) return [];
   const dayStart = date + " 00:00", dayEnd = addDays(date, 1) + " 00:00";
   const [bk, bl] = await Promise.all([
-    env.DB.prepare("SELECT barber_id, start_at, end_at FROM bookings WHERE status IN ('booked','done') AND start_at < ?2 AND end_at > ?1").bind(dayStart, dayEnd).all(),
+    env.DB.prepare("SELECT barber_id, start_at, end_at FROM bookings WHERE status IN ('booked','done') AND start_at < ?2 AND end_at > ?1 AND code != ?3").bind(dayStart, dayEnd, excludeCode).all(),
     env.DB.prepare("SELECT barber_id, start_at, end_at FROM blocks WHERE start_at < ?2 AND end_at > ?1").bind(dayStart, dayEnd).all(),
   ]);
   const busy = (bid, s, e) => bk.results.some((x) => x.barber_id === bid && x.start_at < e && x.end_at > s) ||
@@ -233,6 +234,7 @@ async function book(request, env, url, ctx) {
   // Pago online: según el modo que haya elegido el dueño (off / optional / deposit / full)
   const pc = await payPublic(env);
   const wantsOnline = pc.enabled && service.price_cents > 0 && (pc.mode === "deposit" || pc.mode === "full" || (pc.mode === "optional" && body.pay === "online"));
+  if (wantsOnline && body.nonref !== true) return json({ error: "Debes aceptar que el pago no es reembolsable (solo se puede cambiar la fecha)." }, 400);
   const payCents = wantsOnline ? payAmount(pc, service.price_cents) : 0;
   const ok = await insertBooking(env, {
     code, user_id: user ? user.id : null, name, phone, email: email || (user ? user.email : ""), service_id: service.id, service_name: service.name,
@@ -266,12 +268,16 @@ async function bookingInfo(env, url) {
   const code = url.searchParams.get("code") || "";
   if (!/^[0-9a-f]{24}$/.test(code)) return json({ error: "Cita no encontrada" }, 404);
   const b = await env.DB.prepare(
-    `SELECT b.code, b.name, b.service_name, b.price_cents, b.start_at, b.status, b.pay_status, b.pay_cents, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.code = ?1`
+    `SELECT b.code, b.name, b.service_name, b.price_cents, b.start_at, b.status, b.pay_status, b.pay_cents, b.moves, b.service_id, b.barber_id, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.code = ?1`
   ).bind(code).first();
   if (!b) return json({ error: "Cita no encontrada" }, 404);
   const r = await rules(env);
-  const canCancel = b.status === "booked" && diffMin(b.start_at, nowLocal(env)) >= r.cancelMin;
-  return json({ booking: { ...publicBooking(b), status: b.status, pay_status: b.pay_status, pay_cents: b.pay_cents }, canCancel, cancelMin: r.cancelMin });
+  const inTime = b.status === "booked" && diffMin(b.start_at, nowLocal(env)) >= r.cancelMin;
+  const paid = b.pay_status === "paid";
+  return json({
+    booking: { ...publicBooking(b), status: b.status, pay_status: b.pay_status, pay_cents: b.pay_cents, service_id: b.service_id, barber_id: b.barber_id },
+    canCancel: inTime && !paid, canMove: inTime && b.moves < MAX_MOVES && b.pay_status !== "pending", movesLeft: Math.max(0, MAX_MOVES - b.moves), cancelMin: r.cancelMin,
+  });
 }
 
 async function cancelBooking(request, env, url, ctx) {
@@ -286,18 +292,57 @@ async function cancelBooking(request, env, url, ctx) {
   if (!b || b.status !== "booked") return json({ error: "Esa cita ya no se puede cancelar." }, 409);
   const r = await rules(env);
   if (diffMin(b.start_at, nowLocal(env)) < r.cancelMin) return json({ error: `Faltan menos de ${Math.round(r.cancelMin / 60)} h para tu cita. Llámanos para cancelarla.` }, 409);
+  // Política: el pago online es completo y NO reembolsable; solo se puede cambiar la fecha (ver /api/reschedule)
+  if (b.pay_status === "paid") return json({ error: "Esta cita está pagada y el pago no es reembolsable. Puedes cambiarla de fecha.", paid: true }, 409);
   const upd = await env.DB.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?1 AND status = 'booked'").bind(b.id).run();
   if (!upd.meta.changes) return json({ error: "Esa cita ya no se puede cancelar." }, 409);
-  let refunded = false;
-  if (b.pay_status === "paid") {
-    refunded = await refundBooking(env, b);
-    if (!refunded) ctx.waitUntil(alertOwner(env, `Reembolso pendiente: ${b.name}`, `La cita del ${fmtDate(b.start_at)} se canceló pero el reembolso automático falló. Hazlo a mano en Stripe (${b.pay_cents / 100} €).`).catch(() => {}));
-  } else if (b.pay_status === "pending") {
+  const refunded = false;
+  if (b.pay_status === "pending") {
     await env.DB.prepare("UPDATE bookings SET pay_status = 'expired' WHERE id = ?1").bind(b.id).run();
     if (b.stripe_session) ctx.waitUntil(stripeCall(env, "POST", `/v1/checkout/sessions/${encodeURIComponent(b.stripe_session)}/expire`, {}).catch(() => {}));
   }
-  ctx.waitUntil(alertOwner(env, `Cita cancelada: ${b.name} · ${fmtDate(b.start_at)}`, `${b.service_name}. Tel. ${b.phone}${b.pay_status === "paid" ? (refunded ? " · Reembolsado automáticamente." : " · REEMBOLSO MANUAL PENDIENTE.") : ""}`, true).catch(() => {}));
-  return json({ ok: true, refunded, paid: b.pay_status === "paid" });
+  ctx.waitUntil(alertOwner(env, `Cita cancelada: ${b.name} · ${fmtDate(b.start_at)}`, `${b.service_name}. Tel. ${b.phone}`, true).catch(() => {}));
+  return json({ ok: true });
+}
+
+// Cambiar la fecha de una cita (la única "devolución" de las citas pagadas): mismo servicio y barbero, nuevo hueco libre
+async function rescheduleBooking(request, env, url, ctx) {
+  if (!sameOrigin(request, url)) return json({ error: "Origen no permitido." }, 403);
+  const body = await getJson(request);
+  const code = String(body.code || ""), start = String(body.start || "");
+  if (!/^[0-9a-f]{24}$/.test(code) || !DT_RE.test(start)) return json({ error: "Datos no válidos" }, 400);
+  const ip = request.headers.get("cf-connecting-ip") || "0.0.0.0";
+  if (await tooMany(env, [`move:ip:${ip}`], 20)) return TOO_MANY();
+  await hit(env, [`move:ip:${ip}`]);
+  const b = await env.DB.prepare(
+    `SELECT b.id, b.code, b.name, b.email, b.phone, b.service_id, b.service_name, b.price_cents, b.barber_id, b.start_at, b.status, b.pay_status, b.pay_cents, b.moves, br.name AS barber_name
+     FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.code = ?1`
+  ).bind(code).first();
+  if (!b || b.status !== "booked" || b.pay_status === "pending") return json({ error: "Esa cita no se puede cambiar." }, 409);
+  const r = await rules(env);
+  if (diffMin(b.start_at, nowLocal(env)) < r.cancelMin) return json({ error: `Faltan menos de ${Math.round(r.cancelMin / 60)} h para tu cita: ya no se puede cambiar. Llámanos.` }, 409);
+  if (b.moves >= MAX_MOVES) return json({ error: `Ya has cambiado esta cita ${MAX_MOVES} veces. Llámanos.` }, 409);
+  const service = await env.DB.prepare("SELECT id, name, minutes, price_cents FROM services WHERE id = ?1").bind(b.service_id).first();
+  if (!service) return json({ error: "Servicio no encontrado" }, 404);
+  const date = start.slice(0, 10);
+  if (date > addDays(nowLocal(env).slice(0, 10), r.maxDays)) return json({ error: "Solo se puede reservar con unas semanas de antelación." }, 400);
+  const slots = await freeSlots(env, date, service, b.barber_id, { excludeCode: code });
+  if (!slots.some((x) => x.time === start.slice(11))) return json({ error: "Ese hueco ya no está libre. Elige otra hora." }, 409);
+  const end = addMin(start, service.minutes);
+  // UPDATE atómico: solo se mueve si el hueco sigue libre (sin solapes con otras citas ni bloqueos)
+  const upd = await env.DB.prepare(
+    `UPDATE bookings SET start_at = ?1, end_at = ?2, moves = moves + 1, r24 = 0, r2 = 0
+     WHERE id = ?3 AND status = 'booked'
+       AND NOT EXISTS (SELECT 1 FROM bookings o WHERE o.id != ?3 AND o.barber_id = ?4 AND o.status IN ('booked','done') AND o.start_at < ?2 AND o.end_at > ?1)
+       AND NOT EXISTS (SELECT 1 FROM blocks k WHERE (k.barber_id IS NULL OR k.barber_id = ?4) AND k.start_at < ?2 AND k.end_at > ?1)`
+  ).bind(start, end, b.id, b.barber_id).run();
+  if (!upd.meta.changes) return json({ error: "Ese hueco se acaba de ocupar. Elige otra hora." }, 409);
+  const info = { ...b, start_at: start, paid_cents: b.pay_status === "paid" ? b.pay_cents : 0 };
+  ctx.waitUntil(Promise.all([
+    b.email ? mailBooked(env, info, publicOrigin(env, request), "Cita cambiada") : Promise.resolve(),
+    alertOwner(env, `Cita cambiada: ${b.name}`, `De ${fmtDate(b.start_at)} a ${fmtDate(start)} (${b.service_name} con ${b.barber_name}). Tel. ${b.phone}`, true),
+  ]).catch((e) => console.error("mail cambio", e && e.message)));
+  return json({ ok: true, booking: publicBooking({ ...info, barber_name: b.barber_name }), movesLeft: MAX_MOVES - b.moves - 1 });
 }
 
 /* ------------------------------------------------------------------ recordatorios (Cron) */
@@ -494,7 +539,7 @@ async function me(request, env) {
   if (!user) return json({ user: null });
   const now = nowLocal(env);
   const [upcoming, past, ledger, reds, balance] = await Promise.all([
-    env.DB.prepare(`SELECT b.code, b.service_name, b.price_cents, b.start_at, br.name AS barber FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.user_id = ?1 AND b.status = 'booked' AND b.start_at >= ?2 ORDER BY b.start_at LIMIT 10`).bind(user.id, now).all(),
+    env.DB.prepare(`SELECT b.code, b.service_name, b.price_cents, b.start_at, b.pay_status, br.name AS barber FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.user_id = ?1 AND b.status = 'booked' AND b.start_at >= ?2 ORDER BY b.start_at LIMIT 10`).bind(user.id, now).all(),
     env.DB.prepare(`SELECT b.service_name, b.price_cents, b.start_at, b.status FROM bookings b WHERE b.user_id = ?1 AND (b.start_at < ?2 OR b.status != 'booked') ORDER BY b.start_at DESC LIMIT 10`).bind(user.id, now).all(),
     env.DB.prepare("SELECT delta, reason, created_at FROM points WHERE user_id = ?1 ORDER BY id DESC LIMIT 15").bind(user.id).all(),
     env.DB.prepare("SELECT reward_name, code, status, created_at FROM redemptions WHERE user_id = ?1 ORDER BY id DESC LIMIT 10").bind(user.id).all(),
@@ -744,7 +789,8 @@ async function admin(request, env, url, ctx) {
 /* ------------------------------------------------------------------ pagos (Stripe Checkout) */
 // Cobro en Stripe Checkout (página de Stripe: la web nunca ve ni guarda datos de tarjeta). La cita se confirma cuando Stripe avisa por webhook firmado.
 const PAY_HOLD_MIN = 32; // Stripe exige sesiones de al menos 30 min; el hueco se retiene un poco más
-const PAY_DEFAULT = { mode: "off", depositCents: 500 };
+const PAY_DEFAULT = { mode: "full", depositCents: 500 }; // pago completo por defecto (solo se activa si hay claves de Stripe)
+const MAX_MOVES = 2; // cambios de fecha permitidos por cita pagada
 const payEnabled = (env) => !!(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET);
 async function payPublic(env) {
   const c = { ...PAY_DEFAULT, ...(await setting(env, "pay", {})) };
@@ -890,10 +936,13 @@ function gcal(b) {
   const f = (dt) => dt.replace(/[-: ]/g, "").slice(0, 13) + "00";
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Cita en Infinity Barber")}&dates=${f(b.start_at)}/${f(addMin(b.start_at, 30))}&ctz=${encodeURIComponent(TZ)}`;
 }
-function mailBooked(env, b, origin) {
-  const cancel = `${origin}/?cita=${b.code}`;
-  return sendMail(env, b.email, b.name, `Cita confirmada · ${fmtDate(b.start_at)}`,
-    layout(env, `¡Cita confirmada, ${b.name.split(" ")[0]}!`, `${bookingBlock(b)}<p style="font-size:14px;line-height:1.6">¿No puedes venir? Puedes cancelarla o cambiarla desde el botón (hasta 2 horas antes). <a href="${escHtml(gcal(b))}">Añadir a Google Calendar</a>.</p>`, { text: "Ver o cancelar mi cita", url: cancel }));
+function mailBooked(env, b, origin, title = "Cita confirmada") {
+  const link = `${origin}/?cita=${b.code}`, paid = !!b.paid_cents;
+  const help = paid
+    ? "El pago online no es reembolsable, pero si no puedes venir puedes <b>cambiar la fecha</b> desde el botón (hasta 2 horas antes)."
+    : "¿No puedes venir? Puedes cancelarla o cambiarla desde el botón (hasta 2 horas antes).";
+  return sendMail(env, b.email, b.name, `${title} · ${fmtDate(b.start_at)}`,
+    layout(env, `¡${title}, ${b.name.split(" ")[0]}!`, `${bookingBlock(b)}<p style="font-size:14px;line-height:1.6">${help} <a href="${escHtml(gcal(b))}">Añadir a Google Calendar</a>.</p>`, { text: paid ? "Ver o cambiar mi cita" : "Ver o cancelar mi cita", url: link }));
 }
 function mailReminder(env, b, title, origin) {
   const link = origin ? `${origin}/?cita=${b.code}` : "";

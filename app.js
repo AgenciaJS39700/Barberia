@@ -150,17 +150,22 @@ function renderPay() {
   var el = $("#bk-pay", root); if (!el) return;
   var i = payInfo();
   if (!i) { el.innerHTML = ""; setGoLabel(); return; }
-  var h = Math.round(CFG.rules.cancelMin / 60), pol = "<p class='bx-small'>Cancelación gratuita hasta " + h + " h antes, con reembolso completo.</p>";
+  var h = Math.round(CFG.rules.cancelMin / 60);
+  var pol = "<p class='bx-small'>" + (i.P.mode === "optional"
+    ? "Si pagas online, el pago <b>no es reembolsable</b> (puedes cambiar la fecha hasta " + h + " h antes). Pagando en la barbería puedes cancelar gratis hasta " + h + " h antes."
+    : "El pago <b>no es reembolsable</b>, pero puedes cambiar la fecha de tu cita hasta " + h + " h antes.") + "</p>" +
+    "<label class='bk-terms' id='bk-nr'" + (i.online ? "" : " hidden") + "><input id='bk-nonref' type='checkbox'" + (S.nonref ? " checked" : "") + "><span>Entiendo que el pago es completo y no reembolsable; si no puedo venir, solo puedo cambiar la fecha de la cita.</span></label>";
   if (i.P.mode === "optional") {
     el.innerHTML = "<h3>Forma de pago</h3><div class='bk-svc' role='radiogroup' aria-label='Forma de pago'>" +
       "<label><input type='radio' name='bk-pay' value='online'" + (S.pay === "online" ? " checked" : "") + "><b>Pagar ahora<small> · tarjeta, Apple Pay o Google Pay</small></b><em>" + eur(i.amt) + "</em></label>" +
       "<label><input type='radio' name='bk-pay' value='shop'" + (S.pay !== "online" ? " checked" : "") + "><b>Pagar en la barbería<small> · al terminar</small></b><em>" + eur(i.s.price_cents) + "</em></label></div>" + pol;
-    el.querySelectorAll("[name=bk-pay]").forEach(function (r) { r.addEventListener("change", function () { S.pay = r.value; setGoLabel(); }); });
+    el.querySelectorAll("[name=bk-pay]").forEach(function (r) { r.addEventListener("change", function () { S.pay = r.value; var nr = $("#bk-nr", el); if (nr) nr.hidden = S.pay !== "online"; setGoLabel(); }); });
   } else {
     el.innerHTML = "<div class='bk-paynote'>" + (i.P.mode === "deposit"
       ? "Para confirmar la cita se paga ahora una <b>señal de " + eur(i.amt) + "</b> con tarjeta (también Apple Pay o Google Pay). El resto (" + eur(i.s.price_cents - i.amt) + ") se paga en la barbería."
       : "Para confirmar la cita se paga ahora <b>" + eur(i.amt) + "</b> con tarjeta (también Apple Pay o Google Pay). No tendrás que pagar nada más.") + "</div>" + pol;
   }
+  var nb = $("#bk-nonref", el); if (nb) nb.addEventListener("change", function () { S.nonref = nb.checked; });
   setGoLabel();
 }
 
@@ -170,8 +175,10 @@ function submitBooking() {
   if (!name) { msg(m, "Escribe tu nombre.", "err"); $("#bk-name", root).focus(); return; }
   if (phone.replace(/\D/g, "").length < 9) { msg(m, "Escribe un teléfono válido.", "err"); $("#bk-phone", root).focus(); return; }
   if (!$("#bk-terms", root).checked) { msg(m, "Acepta la política de privacidad para continuar.", "err"); return; }
+  var pi = payInfo();
+  if (pi && pi.online && !S.nonref) { msg(m, "Marca la casilla: el pago es completo y no reembolsable.", "err"); return; }
   btn.disabled = true; msg(m, "Reservando…");
-  api("POST", "/api/book", { name: name, phone: phone, email: email, service: S.service, barber: S.barber, start: S.date + " " + S.time, terms: true, note: S.note || "", pay: S.pay === "online" ? "online" : "shop" }).then(function (r) {
+  api("POST", "/api/book", { name: name, phone: phone, email: email, service: S.service, barber: S.barber, start: S.date + " " + S.time, terms: true, note: S.note || "", pay: S.pay === "online" ? "online" : "shop", nonref: !!S.nonref }).then(function (r) {
     if (r.checkoutUrl) { msg(m, "Te llevamos al pago seguro de Stripe…", "ok"); location.href = r.checkoutUrl; return; }
     showBooked(r.booking, !!email);
   }).catch(function (e) {
@@ -260,7 +267,7 @@ function renderAccount() {
   if (!ME || !USER) return renderAuth("login");
   var r = ME;
   var up = r.upcoming.length ? r.upcoming.map(function (b) {
-    return "<li><span><b>" + esc(b.whenText) + "</b><small>" + esc(b.service_name) + " · " + esc(b.barber) + "</small></span><button type='button' class='bx-ghost' data-cancel='" + esc(b.code) + "'>Cancelar</button></li>";
+    return "<li><span><b>" + esc(b.whenText) + "</b><small>" + esc(b.service_name) + " · " + esc(b.barber) + "</small></span>" + (b.pay_status === "paid" ? "<a class='bx-ghost' href='?cita=" + esc(b.code) + "'>Cambiar fecha</a>" : "<button type='button' class='bx-ghost' data-cancel='" + esc(b.code) + "'>Cancelar</button>") + "</li>";
   }).join("") : "<li><span class='bx-small'>No tienes citas pendientes.</span><a class='bx-ghost' href='#reservas' data-close-dlg>Reservar</a></li>";
   var rw = CFG.rewards.map(function (x) {
     var can = r.points >= x.cost;
@@ -325,6 +332,44 @@ function handleParams() {
   }
 }
 
+// Cambiar la fecha de una cita: mismo servicio y barbero, nuevo hueco libre
+function openMove(cita, r) {
+  var b = r.booking, today = todayLocal(), days = "", chosen = null;
+  for (var i = 0; i <= Math.min(CFG.rules.maxDays, 20); i++) {
+    var dd = addDays(today, i), open = (CFG.hours[String(dow(dd))] || []).length > 0;
+    days += '<button type="button" class="bk-day" data-md="' + dd + '"' + (open ? "" : " disabled") + ' aria-pressed="false" aria-label="' + esc(DOW[dow(dd)] + " " + dd.slice(8)) + '"><span>' + (i === 0 ? "hoy" : DOW[dow(dd)]) + "</span><b>" + Number(dd.slice(8)) + "</b></button>";
+  }
+  var d = showDlg(top("Cambiar fecha") + "<p class='bx-small' style='margin-top:0'>" + esc(b.service) + " con " + esc(b.barber) + ". Ahora: <b>" + esc(b.whenText) + "</b>.</p>" +
+    "<div class='bk-days' role='group' aria-label='Día'>" + days + "</div><div id='mv-slots' class='bk-slots' aria-live='polite'></div><p id='mv-msg' class='bx-msg' role='status'></p>" +
+    "<button type='button' class='bx-btn' id='mv-go' style='width:100%;margin-top:.4rem' disabled>Confirmar nueva fecha</button>");
+  var m = $("#mv-msg", d), go = $("#mv-go", d), box = $("#mv-slots", d);
+  d.querySelectorAll("[data-md]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      chosen = null; go.disabled = true;
+      d.querySelectorAll("[data-md]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === btn)); });
+      box.innerHTML = ""; msg(m, "Buscando huecos…");
+      api("GET", "/api/availability?date=" + btn.dataset.md + "&service=" + b.service_id + "&barber=" + b.barber_id).then(function (a) {
+        if (!a.slots.length) { msg(m, "Ese día no hay huecos libres. Prueba con otro.", "err"); return; }
+        msg(m, "");
+        box.innerHTML = a.slots.map(function (s) { return '<button type="button" class="bx-chip" data-mt="' + s.time + '" aria-pressed="false">' + s.time + "</button>"; }).join("");
+        box.querySelectorAll("[data-mt]").forEach(function (c) {
+          c.addEventListener("click", function () {
+            chosen = btn.dataset.md + " " + c.dataset.mt; go.disabled = false;
+            box.querySelectorAll("[data-mt]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === c)); });
+          });
+        });
+      }).catch(function (e) { msg(m, e.message, "err"); });
+    });
+  });
+  go.addEventListener("click", function () {
+    if (!chosen) return; go.disabled = true; msg(m, "Cambiando…");
+    api("POST", "/api/reschedule", { code: cita, start: chosen }).then(function (x) {
+      showDlg(top("¡Cita cambiada!") + "<p style='font-size:1.1rem;line-height:1.6'><b>" + esc(x.booking.whenText) + "</b><br>" + esc(x.booking.service) + (x.booking.barber ? "<br>Con " + esc(x.booking.barber) : "") + "</p><p class='bx-small'>Te hemos enviado la confirmación por correo (si dejaste uno). " + (x.movesLeft > 0 ? "Te quedan " + x.movesLeft + " cambio" + (x.movesLeft === 1 ? "" : "s") + "." : "Ya no quedan más cambios para esta cita.") + "</p>");
+      if (USER) refreshMe();
+    }).catch(function (e) { go.disabled = false; msg(m, e.message, "err"); if (e.status === 409) { chosen = null; box.innerHTML = ""; } });
+  });
+}
+
 function showCita(cita, pago, tries) {
   api("GET", "/api/booking?code=" + cita).then(function (r) {
     var b = r.booking, pending = b.pay_status === "pending" && b.status === "booked";
@@ -338,26 +383,28 @@ function showCita(cita, pago, tries) {
     else if (pending && pago === "ok") note = "<p class='bx-msg'>Tu pago está en proceso. Te enviaremos la confirmación por correo en cuanto el banco lo confirme.</p>";
     else if (pending) note = "<p class='bx-msg err'>" + (pago === "cancel" ? "No se completó el pago. " : "") + "Tu hueco sigue reservado unos minutos: paga para confirmar la cita.</p>";
     else if (b.pay_status === "refunded") note = "<p class='bx-msg'>Pago reembolsado (" + eur(b.pay_cents) + "). Puede tardar unos días en verse en tu tarjeta.</p>";
-    var actions = "";
+    var actions = "", paid = b.pay_status === "paid";
     if (b.status === "cancelled") actions = "<p class='bx-msg err'>Esta cita está cancelada.</p>";
     else if (b.status !== "booked") actions = "<p class='bx-msg'>Esta cita ya ha pasado.</p>";
     else {
       if (pending) actions += "<button type='button' class='bx-btn' id='ct-pay' style='width:100%;margin-top:.8rem'>Pagar ahora</button>";
-      actions += r.canCancel
-        ? "<button type='button' class='" + (pending ? "bx-ghost" : "bx-btn") + "' id='ct-cancel' style='width:100%;margin-top:.8rem'>Cancelar mi cita" + (b.pay_status === "paid" ? " (reembolso completo)" : "") + "</button>"
-        : "<p class='bx-msg'>Faltan menos de " + Math.round(r.cancelMin / 60) + " h: para cancelar llámanos.</p>";
+      if (r.canMove) actions += "<button type='button' class='" + (pending ? "bx-ghost" : "bx-btn") + "' id='ct-move' style='width:100%;margin-top:.8rem'>Cambiar fecha u hora" + (r.movesLeft < 2 ? " (" + r.movesLeft + " cambio" + (r.movesLeft === 1 ? "" : "s") + " restante" + (r.movesLeft === 1 ? "" : "s") + ")" : "") + "</button>";
+      if (r.canCancel) actions += "<button type='button' class='bx-ghost' id='ct-cancel' style='width:100%;margin-top:.8rem'>Cancelar mi cita</button>";
+      if (paid) actions += "<p class='bx-small' style='margin-top:.8rem'>El pago online no es reembolsable: si no puedes venir, cambia la fecha" + (r.canMove ? "." : ". Ya no es posible (menos de " + Math.round(r.cancelMin / 60) + " h o sin cambios disponibles): llámanos.") + "</p>";
+      else if (!r.canCancel && !pending) actions += "<p class='bx-msg'>Faltan menos de " + Math.round(r.cancelMin / 60) + " h: para cancelar llámanos.</p>";
       actions += "<p id='ct-msg' class='bx-msg' role='status'></p>";
     }
     var d = showDlg(top(pago === "ok" && b.pay_status === "paid" ? "¡Cita confirmada!" : "Tu cita") + "<p style='font-size:1.1rem;line-height:1.6'><b>" + esc(b.whenText) + "</b><br>" + esc(b.service) + " · " + eur(b.price_cents) + "<br>Con " + esc(b.barber) + "</p>" + note + actions);
-    var c = $("#ct-cancel", d), pb = $("#ct-pay", d);
+    var c = $("#ct-cancel", d), pb = $("#ct-pay", d), mv = $("#ct-move", d);
+    if (mv) mv.addEventListener("click", function () { openMove(cita, r); });
     if (pb) pb.addEventListener("click", function () {
       pb.disabled = true; msg($("#ct-msg", d), "Abriendo el pago seguro…");
       api("POST", "/api/pay", { code: cita }).then(function (x) { location.href = x.checkoutUrl; }).catch(function (e) { pb.disabled = false; msg($("#ct-msg", d), e.message, "err"); });
     });
     if (c) c.addEventListener("click", function () {
       api("POST", "/api/cancel", { code: cita }).then(function (x) {
-        msg($("#ct-msg", d), x.paid ? (x.refunded ? "Cita cancelada y pago reembolsado. Puede tardar unos días en verse en tu tarjeta." : "Cita cancelada. Te devolveremos el pago a mano y te avisaremos.") : "Cita cancelada. Gracias por avisar.", "ok");
-        c.hidden = true; if (pb) pb.hidden = true;
+        msg($("#ct-msg", d), "Cita cancelada. Gracias por avisar.", "ok");
+        c.hidden = true; if (pb) pb.hidden = true; if (mv) mv.hidden = true;
       }).catch(function (e) { msg($("#ct-msg", d), e.message, "err"); });
     });
   }).catch(function () { showDlg(top("Tu cita") + "<p class='bx-msg err'>No hemos encontrado esa cita.</p>"); });
