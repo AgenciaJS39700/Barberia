@@ -2,7 +2,7 @@
    - Guarda la "carcasa" de la web para abrir al instante y funcionar sin conexión (página offline).
    - Nunca guarda /api/* (reservas, cuentas y panel siempre van a la red).
    - Recibe avisos push (cita nueva para el barbero, recordatorios para el cliente). */
-const VERSION = "bb-v1";
+const VERSION = "bb-v2";
 const SHELL = ["/offline.html", "/app.css", "/app.js", "/cortes.js", "/pwa.js", "/manifest.webmanifest", "/icons/icon-192.png"];
 
 self.addEventListener("install", (e) => {

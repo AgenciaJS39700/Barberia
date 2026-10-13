@@ -11,12 +11,23 @@
 
   /* ---- Instalar ---- */
   function refresh() {
-    [].forEach.call(document.querySelectorAll("[data-install]"), function (b) { b.hidden = standalone || !(deferred || ios); });
+    [].forEach.call(document.querySelectorAll("[data-install]"), function (b) { b.hidden = standalone; });
   }
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferred = e; refresh(); });
   window.addEventListener("appinstalled", function () { deferred = null; standalone = true; refresh(); });
   document.addEventListener("DOMContentLoaded", refresh);
 
+  function androidHelp() {
+    var d = document.createElement("dialog");
+    d.setAttribute("aria-label", "Cómo instalar la app");
+    d.style.cssText = "max-width:24rem;width:calc(100% - 2rem);border:1px solid #3a3a3d;border-radius:1.2rem;background:#171718;color:#F5F1E8;padding:1.4rem;font:inherit";
+    d.innerHTML = "<h2 style='margin:0 0 .6rem;font-size:1.2rem;color:#E6C57A'>Instala la app en tu móvil</h2>" +
+      "<ol style='padding-left:1.2rem;line-height:1.8;color:#d6d0c4'><li>Abre esta página en <b>Chrome</b> (no dentro de otra app).</li><li>Pulsa los <b>tres puntos ⋮</b> de arriba a la derecha.</li><li>Elige <b>Instalar aplicación</b> o <b>Añadir a pantalla de inicio</b>.</li><li>Confirma con <b>Instalar</b> y abre el icono nuevo.</li></ol>" +
+      "<button type='button' style='margin-top:.8rem;width:100%;min-height:46px;border:0;border-radius:999px;background:#C9A24B;color:#111;font-weight:800;font:inherit;font-weight:800'>Entendido</button>";
+    d.querySelector("button").addEventListener("click", function () { d.close(); d.remove(); });
+    d.addEventListener("close", function () { d.remove(); });
+    document.body.appendChild(d); d.showModal();
+  }
   function iosHelp() {
     var d = document.createElement("dialog");
     d.setAttribute("aria-label", "Cómo instalar la app");
@@ -34,6 +45,7 @@
     e.preventDefault();
     if (deferred) { deferred.prompt(); deferred.userChoice.then(function () { deferred = null; refresh(); }); }
     else if (ios) { iosHelp(); }
+    else { androidHelp(); }
   });
 
   /* ---- Avisos push ---- */
