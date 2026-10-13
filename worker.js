@@ -259,7 +259,7 @@ async function book(request, env, url, ctx) {
   }
   ctx.waitUntil(Promise.all([
     b.email ? mailBooked(env, b, publicOrigin(env, request)) : Promise.resolve(),
-    alertOwner(env, `Nueva cita: ${name} · ${fmtDate(start)}`, `${service.name} con ${b.barber_name}. Tel. ${phone}`, true),
+    alertOwner(env, `Nueva cita: ${name} · ${fmtDate(start)}`, `${service.name} con ${b.barber_name}. Tel. ${phone}`, true, chosen),
   ]).catch((e) => console.error("mail", e && e.message)));
   return json({ ok: true, booking: publicBooking(b) }, 201);
 }
@@ -290,7 +290,7 @@ async function cancelBooking(request, env, url, ctx) {
   const ip = request.headers.get("cf-connecting-ip") || "0.0.0.0";
   if (await tooMany(env, [`cancel:ip:${ip}`], 20)) return TOO_MANY();
   await hit(env, [`cancel:ip:${ip}`]);
-  const b = await env.DB.prepare("SELECT id, code, name, email, phone, service_name, start_at, status, pay_status, pay_cents, stripe_pi, stripe_session FROM bookings WHERE code = ?1").bind(code).first();
+  const b = await env.DB.prepare("SELECT id, code, name, email, phone, service_name, start_at, status, pay_status, pay_cents, stripe_pi, stripe_session, barber_id FROM bookings WHERE code = ?1").bind(code).first();
   if (!b || b.status !== "booked") return json({ error: "Esa cita ya no se puede cancelar." }, 409);
   const r = await rules(env);
   if (diffMin(b.start_at, nowLocal(env)) < r.cancelMin) return json({ error: `Faltan menos de ${Math.round(r.cancelMin / 60)} h para tu cita. Llámanos para cancelarla.` }, 409);
@@ -303,7 +303,7 @@ async function cancelBooking(request, env, url, ctx) {
     await env.DB.prepare("UPDATE bookings SET pay_status = 'expired' WHERE id = ?1").bind(b.id).run();
     if (b.stripe_session) ctx.waitUntil(stripeCall(env, "POST", `/v1/checkout/sessions/${encodeURIComponent(b.stripe_session)}/expire`, {}).catch(() => {}));
   }
-  ctx.waitUntil(alertOwner(env, `Cita cancelada: ${b.name} · ${fmtDate(b.start_at)}`, `${b.service_name}. Tel. ${b.phone}`, true).catch(() => {}));
+  ctx.waitUntil(alertOwner(env, `Cita cancelada: ${b.name} · ${fmtDate(b.start_at)}`, `${b.service_name}. Tel. ${b.phone}`, true, b.barber_id).catch(() => {}));
   return json({ ok: true });
 }
 
@@ -342,7 +342,7 @@ async function rescheduleBooking(request, env, url, ctx) {
   const info = { ...b, start_at: start, paid_cents: b.pay_status === "paid" ? b.pay_cents : 0 };
   ctx.waitUntil(Promise.all([
     b.email ? mailBooked(env, info, publicOrigin(env, request), "Cita cambiada") : Promise.resolve(),
-    alertOwner(env, `Cita cambiada: ${b.name}`, `De ${fmtDate(b.start_at)} a ${fmtDate(start)} (${b.service_name} con ${b.barber_name}). Tel. ${b.phone}`, true),
+    alertOwner(env, `Cita cambiada: ${b.name}`, `De ${fmtDate(b.start_at)} a ${fmtDate(start)} (${b.service_name} con ${b.barber_name}). Tel. ${b.phone}`, true, b.barber_id),
   ]).catch((e) => console.error("mail cambio", e && e.message)));
   return json({ ok: true, booking: publicBooking({ ...info, barber_name: b.barber_name }), movesLeft: MAX_MOVES - b.moves - 1 });
 }
@@ -616,12 +616,30 @@ async function tryon(request, env, url) {
 }
 
 /* ------------------------------------------------------------------ administración */
+// Rutas que solo puede usar el jefe (los barberos quedan limitados a su trabajo diario)
+const OWNER_ONLY = new Set(["points", "service", "barber", "reward", "hours", "rules", "pay", "refund", "team", "team/key", "team/revoke", "audit", "export"]);
+// Acceso: el jefe entra con ADMIN_TOKEN; cada barbero con su clave personal "<id>.<20 hex>" (solo se guarda su hash)
+async function adminAuth(request, env) {
+  const tok = String(request.headers.get("x-admin-token") || "").slice(0, 200);
+  if (safeEqual(tok, env.ADMIN_TOKEN)) return { role: "owner", barberId: null, name: "Jefe" };
+  const m = /^(\d{1,6})\.([0-9a-f]{20})$/.exec(tok.replace(/[\s-]/g, "").toLowerCase());
+  if (!m) return null;
+  const row = await env.DB.prepare("SELECT s.key_hash, b.name, b.active FROM staff s JOIN barbers b ON b.id = s.barber_id WHERE s.barber_id = ?1").bind(Number(m[1])).first();
+  const ok = safeEqual(await sha256(m[2]), row ? row.key_hash : "0".repeat(64));
+  if (!row || !ok || !row.active) return null;
+  return { role: "staff", barberId: Number(m[1]), name: row.name };
+}
+async function audit(env, me, action, detail) {
+  try { await env.DB.prepare("INSERT INTO audit (ts, actor, action, detail) VALUES (?1, ?2, ?3, ?4)").bind(nowLocal(env), me.role === "owner" ? "Jefe" : me.name, action, String(detail || "").slice(0, 200)).run(); } catch (e) { console.error("audit", e && e.message); }
+}
+const CSV_CELL = (v) => { let t = String(v == null ? "" : v); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return /[";\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
 async function admin(request, env, url, ctx) {
   const route = url.pathname.slice("/api/admin/".length);
   const ip = request.headers.get("cf-connecting-ip") || "0.0.0.0";
   if (!env.ADMIN_TOKEN) return json({ error: "Panel no configurado." }, 503);
   if (await tooMany(env, [`admin:ip:${ip}`])) return TOO_MANY();
-  if (!safeEqual(request.headers.get("x-admin-token") || "", env.ADMIN_TOKEN)) {
+  const me = await adminAuth(request, env);
+  if (!me) {
     await hit(env, [`admin:ip:${ip}`]);
     return json({ error: "No autorizado" }, 401);
   }
@@ -629,9 +647,15 @@ async function admin(request, env, url, ctx) {
   if (post && !sameOrigin(request, url)) return json({ error: "Origen no permitido." }, 403);
   const body = post ? await getJson(request) : {};
   const q = url.searchParams;
+  const owner = me.role === "owner";
+  if (!owner && OWNER_ONLY.has(route)) return json({ error: "Solo el jefe puede hacer esto." }, 403);
 
+  if (route === "me" && !post) {
+    if (!owner) await env.DB.prepare("UPDATE staff SET last_seen = ?1 WHERE barber_id = ?2").bind(nowLocal(env), me.barberId).run();
+    return json({ role: me.role, barberId: me.barberId, name: me.name });
+  }
   if (route === "push/subscribe" && post) {
-    const err = await saveSub(env, body.sub, "admin", "");
+    const err = await saveSub(env, body.sub, "admin", "", me.barberId);
     return err ? json({ error: err }, 400) : json({ ok: true });
   }
   if (route === "push/unsubscribe" && post) {
@@ -639,29 +663,39 @@ async function admin(request, env, url, ctx) {
     return json({ ok: true });
   }
   if (route === "push/count" && !post) {
-    const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM push_subs WHERE role = 'admin'").first();
+    const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM push_subs WHERE role = 'admin' AND barber_id IS ?1").bind(me.barberId).first();
     return json({ devices: n ? n.n : 0 });
   }
   if (route === "push/test" && post) {
-    const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM push_subs WHERE role = 'admin'").first();
+    const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM push_subs WHERE role = 'admin' AND barber_id IS ?1").bind(me.barberId).first();
     if (!n || !n.n) return json({ error: "Aún no hay ningún móvil con los avisos activados." }, 409);
-    await pushAdmins(env, "Aviso de prueba", "Si ves esto, recibirás las citas nuevas en este móvil.", "prueba");
+    await pushAdmins(env, "Aviso de prueba", "Si ves esto, recibirás las citas nuevas en este móvil.", "prueba", owner ? [] : [me.barberId], !owner);
     return json({ ok: true });
   }
   if (route === "agenda" && !post) {
     const date = DATE_RE.test(q.get("date") || "") ? q.get("date") : nowLocal(env).slice(0, 10);
-    const [bk, bl] = await Promise.all([
-      env.DB.prepare(`SELECT b.id, b.code, b.name, b.phone, b.email, b.service_name, b.price_cents, b.start_at, b.end_at, b.status, b.source, b.note, b.user_id, b.pay_status, b.pay_cents, br.name AS barber FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.start_at >= ?1 AND b.start_at < ?2 ORDER BY b.start_at`).bind(date + " 00:00", addDays(date, 1) + " 00:00").all(),
+    const [bk, bl, br] = await Promise.all([
+      env.DB.prepare(`SELECT b.id, b.code, b.name, b.phone, b.email, b.service_name, b.price_cents, b.start_at, b.end_at, b.status, b.source, b.note, b.user_id, b.pay_status, b.pay_cents, b.barber_id, br.name AS barber,
+        (SELECT COUNT(*) FROM bookings h WHERE h.phone = b.phone AND h.status = 'done') AS visits,
+        (SELECT COUNT(*) FROM bookings h WHERE h.phone = b.phone AND h.status = 'noshow') AS noshows,
+        (SELECT MAX(h.start_at) FROM bookings h WHERE h.phone = b.phone AND h.status = 'done' AND h.start_at < b.start_at) AS last_visit,
+        (SELECT n.note FROM client_notes n WHERE n.phone = b.phone) AS cnote
+        FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.start_at >= ?1 AND b.start_at < ?2 ORDER BY b.start_at`).bind(date + " 00:00", addDays(date, 1) + " 00:00").all(),
       env.DB.prepare("SELECT id, barber_id, start_at, end_at, note FROM blocks WHERE start_at < ?2 AND end_at > ?1 ORDER BY start_at").bind(date + " 00:00", addDays(date, 1) + " 00:00").all(),
+      env.DB.prepare("SELECT id, name FROM barbers WHERE active = 1 ORDER BY sort, id").all(),
     ]);
-    return json({ date, bookings: bk.results, blocks: bl.results });
+    // Los barberos ven la agenda de todos (para cubrirse entre ellos) pero sin el correo ni los datos de pago del cliente
+    const rows = owner ? bk.results : bk.results.map((x) => { const { email, ...rest } = x; return rest; });
+    return json({ date, now: nowLocal(env), bookings: rows, blocks: bl.results, barbers: br.results });
   }
   if (route === "status" && post) {
     const id = Number(body.id), status = String(body.status);
     if (!Number.isInteger(id) || !["booked", "done", "noshow", "cancelled"].includes(status)) return json({ error: "Datos no válidos" }, 400);
-    const b = await env.DB.prepare("SELECT id, user_id, price_cents, points_done, status FROM bookings WHERE id = ?1").bind(id).first();
+    const b = await env.DB.prepare("SELECT id, user_id, price_cents, points_done, status, barber_id, name, start_at FROM bookings WHERE id = ?1").bind(id).first();
     if (!b) return json({ error: "Cita no encontrada" }, 404);
+    if (!owner && b.barber_id !== me.barberId) return json({ error: "Esa cita es de otro barbero. Si te toca a ti, pulsa «Quedármela»." }, 403);
     await env.DB.prepare("UPDATE bookings SET status = ?1 WHERE id = ?2").bind(status, id).run();
+    await audit(env, me, "estado", `${b.name} · ${b.start_at}: ${b.status} → ${status}`);
     // Puntos del club: se dan una sola vez al marcar la cita como realizada
     if (status === "done" && b.user_id && !b.points_done) {
       const claimed = await env.DB.prepare("UPDATE bookings SET points_done = 1 WHERE id = ?1 AND points_done = 0").bind(id).run();
@@ -680,23 +714,33 @@ async function admin(request, env, url, ctx) {
     return json({ ok: true });
   }
   if (route === "book" && post) {
-    const name = cleanName(body.name), phone = cleanPhone(body.phone), serviceId = Number(body.service), barberId = Number(body.barber), start = String(body.start || "");
+    const name = cleanName(body.name), phone = cleanPhone(body.phone), serviceId = Number(body.service), barberId = owner ? Number(body.barber) : me.barberId, start = String(body.start || "");
     if (!name || !phone || !DT_RE.test(start)) return json({ error: "Faltan datos: nombre, teléfono y hora." }, 400);
     const service = await env.DB.prepare("SELECT id, name, minutes, price_cents FROM services WHERE id = ?1").bind(serviceId).first();
     const barber = await env.DB.prepare("SELECT id, name FROM barbers WHERE id = ?1").bind(barberId).first();
     if (!service || !barber) return json({ error: "Servicio o barbero no válidos." }, 400);
     const email = cleanEmail(body.email);
     const ok = await insertBooking(env, { code: randomHex(12), user_id: null, name, phone, email: EMAIL_RE.test(email) ? email : "", service_id: service.id, service_name: service.name, price_cents: service.price_cents, barber_id: barber.id, start_at: start, end_at: addMin(start, service.minutes), source: "mostrador" });
+    if (ok) {
+      await audit(env, me, "cita nueva", `${name} · ${start} · ${service.name} · ${barber.name}`);
+      if (owner) ctx.waitUntil(pushAdmins(env, `Nueva cita: ${name}`, `${fmtDate(start)} · ${service.name}`, "cita", [barberId], true).catch(() => {}));
+    }
     return ok ? json({ ok: true }, 201) : json({ error: "Ese hueco está ocupado o bloqueado." }, 409);
   }
   if (route === "block" && post) {
     const start = String(body.start || ""), end = String(body.end || "");
     if (!DT_RE.test(start) || !DT_RE.test(end) || end <= start) return json({ error: "Fechas no válidas" }, 400);
-    await env.DB.prepare("INSERT INTO blocks (barber_id, start_at, end_at, note) VALUES (?1, ?2, ?3, ?4)").bind(Number(body.barber) || null, start, end, String(body.note || "").slice(0, 80)).run();
+    const who = owner ? (Number(body.barber) || null) : me.barberId;
+    await env.DB.prepare("INSERT INTO blocks (barber_id, start_at, end_at, note) VALUES (?1, ?2, ?3, ?4)").bind(who, start, end, String(body.note || "").slice(0, 80)).run();
+    await audit(env, me, "bloqueo", `${start} → ${end}${body.note ? " · " + String(body.note).slice(0, 40) : ""}`);
     return json({ ok: true }, 201);
   }
   if (route === "unblock" && post) {
-    await env.DB.prepare("DELETE FROM blocks WHERE id = ?1").bind(Number(body.id)).run();
+    const k = await env.DB.prepare("SELECT id, barber_id FROM blocks WHERE id = ?1").bind(Number(body.id)).first();
+    if (!k) return json({ ok: true });
+    if (!owner && k.barber_id !== me.barberId) return json({ error: "Ese bloqueo no es tuyo." }, 403);
+    await env.DB.prepare("DELETE FROM blocks WHERE id = ?1").bind(k.id).run();
+    await audit(env, me, "desbloqueo", `bloqueo #${k.id}`);
     return json({ ok: true });
   }
   if (route === "clients" && !post) {
@@ -707,7 +751,7 @@ async function admin(request, env, url, ctx) {
         (SELECT COUNT(*) FROM bookings WHERE user_id = u.id AND status = 'noshow') AS noshows
        FROM users u WHERE u.name LIKE ?1 OR u.email LIKE ?1 OR u.phone LIKE ?1 ORDER BY u.id DESC LIMIT 100`
     ).bind(term).all();
-    return json({ clients: results });
+    return json({ clients: owner ? results : results.map((c) => { const { email, ...rest } = c; return rest; }) });
   }
   if (route === "points" && post) {
     const uid = Number(body.userId), delta = Math.trunc(Number(body.delta));
@@ -736,13 +780,32 @@ async function admin(request, env, url, ctx) {
     });
   }
   if (route === "stats" && !post) {
-    const today = nowLocal(env).slice(0, 10), from = addDays(today, -29);
-    const s = await env.DB.prepare(
-      `SELECT COUNT(*) AS total, SUM(status = 'done') AS done, SUM(status = 'noshow') AS noshow, SUM(status = 'cancelled') AS cancelled,
-        COALESCE(SUM(CASE WHEN status = 'done' THEN price_cents END), 0) AS revenue FROM bookings WHERE start_at >= ?1 AND start_at < ?2`
-    ).bind(from + " 00:00", addDays(today, 1) + " 00:00").first();
-    const users = await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first();
-    return json({ days: 30, ...s, clients: users.n });
+    const today = nowLocal(env).slice(0, 10), from = addDays(today, -29), to = addDays(today, 1) + " 00:00", f0 = from + " 00:00";
+    if (!owner) {
+      const [t, d, nx] = await Promise.all([
+        env.DB.prepare("SELECT COUNT(*) AS n, SUM(status = 'done') AS done FROM bookings WHERE barber_id = ?1 AND status != 'cancelled' AND start_at >= ?2 AND start_at < ?3").bind(me.barberId, today + " 00:00", to).first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM bookings WHERE barber_id = ?1 AND status = 'done' AND start_at >= ?2 AND start_at < ?3").bind(me.barberId, f0, to).first(),
+        env.DB.prepare("SELECT name, start_at FROM bookings WHERE barber_id = ?1 AND status = 'booked' AND start_at >= ?2 ORDER BY start_at LIMIT 1").bind(me.barberId, nowLocal(env)).first(),
+      ]);
+      return json({ role: "staff", today: { total: t.n || 0, done: t.done || 0 }, done30: d.n || 0, next: nx || null });
+    }
+    const [s30, users, byBarber, byDay, byService, byHour, tod, paid] = await Promise.all([
+      env.DB.prepare(`SELECT COUNT(*) AS total, SUM(status = 'done') AS done, SUM(status = 'noshow') AS noshow, SUM(status = 'cancelled') AS cancelled,
+        COALESCE(SUM(CASE WHEN status = 'done' THEN price_cents END), 0) AS revenue FROM bookings WHERE start_at >= ?1 AND start_at < ?2`).bind(f0, to).first(),
+      env.DB.prepare("SELECT COUNT(*) AS n FROM users").first(),
+      env.DB.prepare(`SELECT br.name, COUNT(*) AS total, SUM(b.status = 'done') AS done, SUM(b.status = 'noshow') AS noshow, COALESCE(SUM(CASE WHEN b.status = 'done' THEN b.price_cents END), 0) AS revenue
+        FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.start_at >= ?1 AND b.start_at < ?2 AND b.status != 'cancelled' GROUP BY b.barber_id ORDER BY revenue DESC`).bind(f0, to).all(),
+      env.DB.prepare(`SELECT substr(start_at, 1, 10) AS d, SUM(status = 'done') AS done, COALESCE(SUM(CASE WHEN status = 'done' THEN price_cents END), 0) AS revenue
+        FROM bookings WHERE start_at >= ?1 AND start_at < ?2 GROUP BY d ORDER BY d`).bind(addDays(today, -13) + " 00:00", to).all(),
+      env.DB.prepare(`SELECT service_name AS name, COUNT(*) AS n, COALESCE(SUM(CASE WHEN status = 'done' THEN price_cents END), 0) AS revenue FROM bookings
+        WHERE start_at >= ?1 AND start_at < ?2 AND status != 'cancelled' GROUP BY service_name ORDER BY n DESC LIMIT 6`).bind(f0, to).all(),
+      env.DB.prepare(`SELECT substr(start_at, 12, 2) AS h, COUNT(*) AS n FROM bookings WHERE start_at >= ?1 AND start_at < ?2 AND status != 'cancelled' GROUP BY h ORDER BY h`).bind(f0, to).all(),
+      env.DB.prepare(`SELECT COUNT(*) AS total, SUM(status = 'done') AS done, SUM(status = 'booked') AS pending, SUM(status = 'noshow') AS noshow,
+        COALESCE(SUM(CASE WHEN status = 'done' THEN price_cents END), 0) AS revenue, COALESCE(SUM(CASE WHEN status IN ('booked','done') THEN price_cents END), 0) AS expected
+        FROM bookings WHERE start_at >= ?1 AND start_at < ?2 AND status != 'cancelled'`).bind(today + " 00:00", to).first(),
+      env.DB.prepare(`SELECT COALESCE(SUM(pay_cents), 0) AS cents FROM bookings WHERE pay_status = 'paid' AND status != 'cancelled' AND start_at >= ?1 AND start_at < ?2`).bind(f0, to).first(),
+    ]);
+    return json({ role: "owner", days: 30, ...s30, clients: users.n, today: tod, byBarber: byBarber.results, byDay: byDay.results, byService: byService.results, byHour: byHour.results, paidOnline: paid.cents });
   }
   if (route === "catalog" && !post) {
     const [services, barbers, rewards, hours, r] = await Promise.all([
@@ -809,6 +872,85 @@ async function admin(request, env, url, ctx) {
     if (!(await refundBooking(env, b))) return json({ error: "Stripe no pudo hacer el reembolso. Revísalo en el panel de Stripe." }, 502);
     if (body.cancel !== false && b.status === "booked") await env.DB.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?1").bind(b.id).run();
     return json({ ok: true });
+  }
+  if (route === "move" && post) {
+    const id = Number(body.id);
+    const b = await env.DB.prepare("SELECT id, code, name, email, phone, service_id, service_name, price_cents, barber_id, start_at, end_at, status, pay_status, pay_cents FROM bookings WHERE id = ?1").bind(id).first();
+    if (!b || b.status !== "booked") return json({ error: "Esa cita no se puede mover." }, 409);
+    const toBarber = body.barber != null && body.barber !== "" ? Number(body.barber) : b.barber_id;
+    const toStart = body.start ? String(body.start) : b.start_at;
+    if (!DT_RE.test(toStart) || !Number.isInteger(toBarber)) return json({ error: "Datos no válidos" }, 400);
+    const nb = await env.DB.prepare("SELECT id, name FROM barbers WHERE id = ?1 AND active = 1").bind(toBarber).first();
+    if (!nb) return json({ error: "Ese barbero no está disponible." }, 400);
+    // Un barbero mueve sus propias citas, o se queda con la de un compañero (misma hora) para cubrirlo
+    if (!owner && b.barber_id !== me.barberId && !(toBarber === me.barberId && toStart === b.start_at)) return json({ error: "Esa cita es de otro barbero. Solo puedes quedártela a la misma hora." }, 403);
+    const dur = diffMin(b.end_at, b.start_at), toEnd = addMin(toStart, dur);
+    if (toStart === b.start_at && toBarber === b.barber_id) return json({ ok: true });
+    const timeChanged = toStart !== b.start_at;
+    const upd = await env.DB.prepare(
+      `UPDATE bookings SET barber_id = ?1, start_at = ?2, end_at = ?3, r24 = CASE WHEN ?4 THEN 0 ELSE r24 END, r2 = CASE WHEN ?4 THEN 0 ELSE r2 END
+       WHERE id = ?5 AND status = 'booked'
+         AND NOT EXISTS (SELECT 1 FROM bookings o WHERE o.id != ?5 AND o.barber_id = ?1 AND o.status IN ('booked','done') AND o.start_at < ?3 AND o.end_at > ?2)
+         AND NOT EXISTS (SELECT 1 FROM blocks k WHERE (k.barber_id IS NULL OR k.barber_id = ?1) AND k.start_at < ?3 AND k.end_at > ?2)`
+    ).bind(toBarber, toStart, toEnd, timeChanged ? 1 : 0, b.id).run();
+    if (!upd.meta.changes) return json({ error: "Ese hueco está ocupado o bloqueado." }, 409);
+    const oldB = await env.DB.prepare("SELECT name FROM barbers WHERE id = ?1").bind(b.barber_id).first();
+    await audit(env, me, toBarber !== b.barber_id ? "cita pasada" : "cita movida", `${b.name}: ${b.start_at} (${oldB ? oldB.name : "?"}) → ${toStart} (${nb.name})`);
+    const what = toBarber !== b.barber_id ? `${b.name} pasa de ${oldB ? oldB.name : "otro barbero"} a ${nb.name}` : `${b.name}: ${fmtDate(b.start_at)} → ${fmtDate(toStart)}`;
+    const jobs = [pushAdmins(env, toBarber !== b.barber_id ? "Cita reasignada" : "Cita movida", `${what} · ${fmtDate(toStart)}`, "cita", [b.barber_id, toBarber], false)];
+    if (timeChanged) {
+      const info = { ...b, start_at: toStart, barber_name: nb.name, paid_cents: b.pay_status === "paid" ? b.pay_cents : 0 };
+      if (b.email) jobs.push(mailBooked(env, info, publicOrigin(env, request), "Cita cambiada"));
+      jobs.push(pushBooking(env, b.code, "Tu cita ha cambiado", `Nueva hora: ${fmtDate(toStart)}`));
+    }
+    ctx.waitUntil(Promise.allSettled(jobs));
+    return json({ ok: true });
+  }
+  if (route === "note" && post) {
+    const phone = cleanPhone(body.phone);
+    if (!phone) return json({ error: "Teléfono no válido" }, 400);
+    const note = String(body.note || "").replace(/[\u0000-\u001f<>]/g, " ").trim().slice(0, 300);
+    if (!note) await env.DB.prepare("DELETE FROM client_notes WHERE phone = ?1").bind(phone).run();
+    else await env.DB.prepare("INSERT INTO client_notes (phone, note, updated_by, updated_at) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(phone) DO UPDATE SET note = excluded.note, updated_by = excluded.updated_by, updated_at = excluded.updated_at").bind(phone, note, owner ? "Jefe" : me.name, nowLocal(env)).run();
+    await audit(env, me, "nota de cliente", `${phone}: ${note.slice(0, 60)}`);
+    return json({ ok: true });
+  }
+  if (route === "team" && !post) {
+    const { results } = await env.DB.prepare("SELECT b.id, b.name, b.active, (s.barber_id IS NOT NULL) AS has_key, s.last_seen, s.created_at AS key_created, (SELECT COUNT(*) FROM push_subs p WHERE p.role = 'admin' AND p.barber_id = b.id) AS devices FROM barbers b LEFT JOIN staff s ON s.barber_id = b.id ORDER BY b.sort, b.id").all();
+    return json({ team: results });
+  }
+  if (route === "team/key" && post) {
+    const bid = Number(body.barberId);
+    const br = await env.DB.prepare("SELECT id, name FROM barbers WHERE id = ?1").bind(bid).first();
+    if (!br) return json({ error: "Barbero no encontrado" }, 404);
+    const secret = randomHex(10);
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO staff (barber_id, key_hash) VALUES (?1, ?2) ON CONFLICT(barber_id) DO UPDATE SET key_hash = excluded.key_hash, created_at = datetime('now'), last_seen = NULL").bind(bid, await sha256(secret)),
+      env.DB.prepare("DELETE FROM push_subs WHERE role = 'admin' AND barber_id = ?1").bind(bid),
+    ]);
+    await audit(env, me, "clave de acceso", `Nueva clave para ${br.name}`);
+    return json({ ok: true, name: br.name, key: `${bid}.${secret}` });
+  }
+  if (route === "team/revoke" && post) {
+    const bid = Number(body.barberId);
+    const br = await env.DB.prepare("SELECT name FROM barbers WHERE id = ?1").bind(bid).first();
+    await env.DB.batch([env.DB.prepare("DELETE FROM staff WHERE barber_id = ?1").bind(bid), env.DB.prepare("DELETE FROM push_subs WHERE role = 'admin' AND barber_id = ?1").bind(bid)]);
+    await audit(env, me, "acceso retirado", br ? br.name : String(bid));
+    return json({ ok: true });
+  }
+  if (route === "audit" && !post) {
+    const { results } = await env.DB.prepare("SELECT ts, actor, action, detail FROM audit ORDER BY id DESC LIMIT 100").all();
+    return json({ items: results });
+  }
+  if (route === "export" && !post) {
+    const from = DATE_RE.test(q.get("from") || "") ? q.get("from") : addDays(nowLocal(env).slice(0, 10), -29);
+    const to = DATE_RE.test(q.get("to") || "") ? q.get("to") : nowLocal(env).slice(0, 10);
+    const { results } = await env.DB.prepare(`SELECT b.start_at, b.name, b.phone, b.email, b.service_name, br.name AS barber, b.price_cents, b.status, b.pay_status, b.pay_cents, b.source FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.start_at >= ?1 AND b.start_at < ?2 ORDER BY b.start_at LIMIT 5000`).bind(from + " 00:00", addDays(to, 1) + " 00:00").all();
+    const st = { booked: "pendiente", done: "realizada", noshow: "no vino", cancelled: "cancelada" };
+    const head = ["Fecha", "Hora", "Cliente", "Teléfono", "Correo", "Servicio", "Barbero", "Precio (€)", "Estado", "Pagado online (€)", "Origen"];
+    const rows = results.map((r) => [r.start_at.slice(0, 10), r.start_at.slice(11), r.name, r.phone, r.email || "", r.service_name, r.barber, (r.price_cents / 100).toFixed(2).replace(".", ","), st[r.status] || r.status, r.pay_status === "paid" ? (r.pay_cents / 100).toFixed(2).replace(".", ",") : "", r.source || ""]);
+    await audit(env, me, "exportación", `${from} → ${to}`);
+    return new Response("\ufeff" + [head, ...rows].map((r) => r.map(CSV_CELL).join(";")).join("\r\n"), { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="citas-${from}-a-${to}.csv"`, "cache-control": "no-store" } });
   }
   return json({ error: "No encontrado" }, 404);
 }
@@ -909,7 +1051,7 @@ async function stripeWebhook(request, env, ctx) {
 }
 async function markPaid(env, ctx, code, o, origin) {
   const b = await env.DB.prepare(
-    `SELECT b.id, b.code, b.name, b.phone, b.email, b.service_name, b.price_cents, b.start_at, b.pay_status, b.pay_cents, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.code = ?1`
+    `SELECT b.id, b.code, b.name, b.phone, b.email, b.service_name, b.price_cents, b.start_at, b.pay_status, b.pay_cents, b.barber_id, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.code = ?1`
   ).bind(code).first();
   if (!b || b.pay_status === "paid" || b.pay_status === "refunded") return;
   const pi = typeof o.payment_intent === "string" ? o.payment_intent : (o.payment_intent && o.payment_intent.id) || null;
@@ -922,7 +1064,7 @@ async function markPaid(env, ctx, code, o, origin) {
     const info = { ...b, paid_cents: b.pay_cents };
     ctx.waitUntil(Promise.all([
       b.email ? mailBooked(env, info, origin) : Promise.resolve(),
-      alertOwner(env, `Nueva cita pagada: ${b.name} · ${fmtDate(b.start_at)}`, `${b.service_name} con ${b.barber_name}. Pagado online: ${b.pay_cents / 100} € de ${b.price_cents / 100} €. Tel. ${b.phone}`, true),
+      alertOwner(env, `Nueva cita pagada: ${b.name} · ${fmtDate(b.start_at)}`, `${b.service_name} con ${b.barber_name}. Pagado online: ${b.pay_cents / 100} € de ${b.price_cents / 100} €. Tel. ${b.phone}`, true, b.barber_id),
     ]).catch((e) => console.error("mail pago", e && e.message)));
   } else {
     // El pago llegó cuando la cita ya estaba cancelada: se devuelve el dinero
@@ -996,23 +1138,29 @@ async function sendPush(env, sub, payload, urgency = "normal") {
     return res.ok;
   } catch (e) { console.error("push", e && e.message); return false; }
 }
-async function pushAdmins(env, title, body, tag) {
-  const subs = await env.DB.prepare("SELECT endpoint, p256dh, auth FROM push_subs WHERE role = 'admin'").all();
+// Avisos al móvil del jefe (recibe todos) y de los barberos indicados; skipOwner = no avisar al jefe
+async function pushAdmins(env, title, body, tag, barberIds = [], skipOwner = false) {
+  const ids = [...new Set((barberIds || []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+  const conds = [];
+  if (!skipOwner) conds.push("barber_id IS NULL");
+  if (ids.length) conds.push(`barber_id IN (${ids.map((_, i) => "?" + (i + 1)).join(",")})`);
+  if (!conds.length) return;
+  const subs = await env.DB.prepare(`SELECT endpoint, p256dh, auth FROM push_subs WHERE role = 'admin' AND (${conds.join(" OR ")})`).bind(...ids).all();
   await Promise.allSettled(subs.results.map((s) => sendPush(env, s, { title, body, url: "/admin.html", tag: tag || "cita", admin: true }, "high")));
 }
 async function pushBooking(env, code, title, body) {
   const subs = await env.DB.prepare("SELECT endpoint, p256dh, auth FROM push_subs WHERE role = 'client' AND booking_code = ?1").bind(code).all();
   await Promise.allSettled(subs.results.map((s) => sendPush(env, s, { title, body, url: "/?cita=" + encodeURIComponent(code), tag: "cita-" + code }, "high")));
 }
-async function saveSub(env, sub, role, code) {
+async function saveSub(env, sub, role, code, barberId = null) {
   const k = sub && sub.keys;
   if (!sub || typeof sub.endpoint !== "string" || sub.endpoint.length > 700 || !pushHostOk(sub.endpoint) || !k) return "Aviso no válido.";
   let ok = false;
   try { ok = unb64u(k.p256dh).length === 65 && unb64u(k.auth).length === 16; } catch { ok = false; }
   if (!ok) return "Aviso no válido.";
   await env.DB.prepare(
-    "INSERT INTO push_subs (endpoint, p256dh, auth, role, booking_code) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(endpoint, role, booking_code) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth"
-  ).bind(sub.endpoint, k.p256dh, k.auth, role, code).run();
+    "INSERT INTO push_subs (endpoint, p256dh, auth, role, booking_code, barber_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT(endpoint, role, booking_code) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, barber_id = excluded.barber_id"
+  ).bind(sub.endpoint, k.p256dh, k.auth, role, code, role === "admin" ? barberId : null).run();
   return "";
 }
 async function pushPublic(request, env, url, ctx) {
@@ -1041,8 +1189,8 @@ async function pushPublic(request, env, url, ctx) {
 }
 
 /* ------------------------------------------------------------------ correo (Brevo) */
-async function alertOwner(env, title, detail, info) {
-  if (info) await pushAdmins(env, title, String(detail || "").slice(0, 160), "cita").catch((e) => console.error("pushAdmins", e && e.message));
+async function alertOwner(env, title, detail, info, barberId) {
+  if (info) await pushAdmins(env, title, String(detail || "").slice(0, 160), "cita", barberId ? [barberId] : []).catch((e) => console.error("pushAdmins", e && e.message));
   try {
     if (!env.OWNER_EMAIL) return;
     const inner = `<p style="font-size:14px;line-height:1.5">${info ? "" : "Se ha producido un problema en la web."}</p><p style="font-size:14px;background:#f6f4f0;padding:10px 12px;border-radius:8px;word-break:break-word">${escHtml(String(detail || "sin detalle").slice(0, 300))}</p>`;

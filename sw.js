@@ -2,7 +2,7 @@
    - Guarda la "carcasa" de la web para abrir al instante y funcionar sin conexión (página offline).
    - Nunca guarda /api/* (reservas, cuentas y panel siempre van a la red).
    - Recibe avisos push (cita nueva para el barbero, recordatorios para el cliente). */
-const VERSION = "bb-v3";
+const VERSION = "bb-v4";
 const SHELL = ["/offline.html", "/app.css", "/app.js", "/cortes.js", "/pwa.js", "/manifest.webmanifest", "/icons/icon-192.png"];
 
 self.addEventListener("install", (e) => {
@@ -27,7 +27,12 @@ self.addEventListener("fetch", (e) => {
     );
     return;
   }
-  // Estáticos (css, js, imágenes): sirve la copia y la actualiza en segundo plano
+  // Código de la app (js/css): red primero para que una actualización se vea al instante; copia si no hay conexión
+  if (/^\/(admin|app|pwa|cortes)\.js$|^\/app\.css$/.test(url.pathname)) {
+    e.respondWith(fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); } return res; }).catch(() => caches.match(req)));
+    return;
+  }
+  // Estáticos (imágenes, iconos…): sirve la copia y la actualiza en segundo plano
   e.respondWith(
     caches.open(VERSION).then(async (c) => {
       const hit = await c.match(req);

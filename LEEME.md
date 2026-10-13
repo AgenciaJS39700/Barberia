@@ -62,3 +62,14 @@ La web se instala en el móvil como una app (icono propio, pantalla completa, ab
 **Seguridad:** el Worker solo envía avisos a los servicios de push oficiales (Google, Mozilla, Apple, Microsoft); las suscripciones de clientes exigen una cita real y se limitan a 4 dispositivos por cita; las de barbero exigen la contraseña del panel. Nunca se cachea `/api/*`.
 
 **Límites que conviene saber:** no aparece en App Store ni Google Play (para eso haría falta una app nativa o un envoltorio con Capacitor y cuentas de desarrollador: ~99 $/año Apple y 25 $ Google). Las notificaciones push en iPhone requieren iOS 16.4 o superior y la app instalada.
+
+
+## Equipo: jefe y barberos (migración 004)
+- **Jefe:** entra en `/admin.html` con la contraseña del panel (`ADMIN_TOKEN`). Lo ve y gestiona todo: agenda de todos, resumen e ingresos, clientes, canjes, equipo, ajustes y descarga de citas (CSV para Excel).
+- **Barberos:** cada uno entra con su **propia clave** (`<id>.<20 hex>`; en la base solo se guarda su hash). Pestaña **Equipo → Crear acceso** genera un enlace listo para enviar por WhatsApp (`/admin.html#k=...`): al abrirlo entra directo y se queda recordado.
+  - Ven la agenda de **todos** (para cubrirse), sin correo ni pagos del cliente.
+  - Gestionan **solo sus citas** (realizada, no vino, cancelar, mover, pasarla a un compañero). La de otro solo pueden **quedársela** a la misma hora.
+  - Crean citas y bloqueos solo para sí mismos; notas de cliente visibles para todos.
+  - No ven ingresos, precios, ajustes, reembolsos ni puntos. Los avisos al móvil son solo de sus citas.
+- Registro de actividad (quién cambió qué) en la pestaña Equipo. Retirar un acceso o desactivar al barbero lo desconecta al instante.
+- Para una base nueva: `schema.sql` ya incluye todo. Para una existente: ejecutar `migrations/004_equipo.sql` una sola vez.

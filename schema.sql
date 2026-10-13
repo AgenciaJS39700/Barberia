@@ -39,8 +39,15 @@ CREATE TABLE IF NOT EXISTS push_subs (
   auth TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('admin','client')),
   booking_code TEXT NOT NULL DEFAULT '',
+  barber_id INTEGER, -- avisos de admin: NULL = jefe (recibe todas las citas); si no, solo las de ese barbero
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (endpoint, role, booking_code)
 );
 CREATE INDEX IF NOT EXISTS idx_push_booking ON push_subs(booking_code, role);
 CREATE INDEX IF NOT EXISTS idx_push_endpoint ON push_subs(endpoint);
+CREATE INDEX IF NOT EXISTS idx_push_barber ON push_subs(role, barber_id);
+-- Equipo (migración 004): acceso personal por barbero, notas de cliente y registro de actividad
+CREATE TABLE IF NOT EXISTS staff (barber_id INTEGER PRIMARY KEY REFERENCES barbers(id) ON DELETE CASCADE, key_hash TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), last_seen TEXT);
+CREATE TABLE IF NOT EXISTS client_notes (phone TEXT PRIMARY KEY, note TEXT NOT NULL, updated_by TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '');
+CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, actor TEXT NOT NULL, action TEXT NOT NULL, detail TEXT NOT NULL DEFAULT '');
+CREATE INDEX IF NOT EXISTS idx_bk_phone ON bookings(phone);

@@ -30,13 +30,53 @@ h2{font-size:.85rem;letter-spacing:.14em;text-transform:uppercase;color:#C9A24B;
 .stat{background:#1d1d1f;border:1px solid #2c2c2f;border-radius:.9rem;padding:.8rem}.stat b{display:block;font-size:1.6rem;color:#E6C57A}
 table{width:100%;border-collapse:collapse}td,th{padding:.4rem .3rem;text-align:left;font-size:.85rem}
 input,select{min-width:0}
+
+.item{text-align:left;font:inherit;color:inherit}button.item{width:100%;cursor:pointer}
+.tag.booked{color:#E6C57A;border-color:#C9A24B}
+.tbl{overflow-x:auto}.nw{white-space:nowrap;color:#a8a29a}
+.sh-t{margin:0 0 .5rem;font-size:1.15rem;color:#E6C57A}.sh-l{margin:.2rem 0 .8rem;color:#d6d0c4;line-height:1.5}.sh-c{margin:.4rem 0}
+.cx-in h2{margin:1.1rem 0 .5rem}
+textarea.bx-in{resize:vertical;font-family:inherit}
+.ag-head{display:grid;gap:.5rem;margin-bottom:.8rem}
+.ag-nav{display:flex;gap:.4rem;align-items:center}.ag-nav input{width:auto;margin:0;flex:1;min-width:0}
+.ag-day{font-size:1.05rem;text-transform:capitalize}
+.ag-sum{display:flex;flex-wrap:wrap;gap:.4rem .9rem;font-size:.85rem;color:#a8a29a}.ag-sum b{color:#E6C57A;font-size:1rem}
+.ag-next{flex-basis:100%;background:#1d1d1f;border:1px solid #3a3320;border-radius:.7rem;padding:.45rem .7rem;color:#f5f1e8}.ag-next small{color:#a8a29a}
+.ag-tools{display:grid;gap:.6rem;margin-bottom:.8rem}.ag-chips{display:flex;gap:.4rem;overflow-x:auto;padding-bottom:.2rem}.ag-chips .bx-chip{flex:none}
+.ag-btns{display:flex;flex-wrap:wrap;gap:.5rem}.ag-foot{margin-top:.8rem}
+.tl{display:flex;position:relative;border:1px solid #2c2c2f;border-radius:.9rem;background:#141415;overflow:auto;max-height:68vh;-webkit-overflow-scrolling:touch}
+.tl-axis{position:sticky;left:0;z-index:5;background:#141415;width:46px;flex:none;border-right:1px solid #2c2c2f}
+.tl-h{position:sticky;top:0;z-index:4;height:32px;display:flex;align-items:center;justify-content:center;background:#1d1d1f;border-bottom:1px solid #2c2c2f;font-size:.8rem;font-weight:800;color:#E6C57A;white-space:nowrap;overflow:hidden;padding:0 .3rem}
+.tl-axis .tl-h{z-index:6}
+.tl-col{flex:1 0 118px;border-left:1px solid #232326;min-width:0}
+.tl-body{position:relative;cursor:copy;background-image:linear-gradient(to bottom,#2a2a2d 0,#2a2a2d 1px,transparent 1px),linear-gradient(to bottom,#1d1d1f 0,#1d1d1f 1px,transparent 1px);background-size:100% var(--hp),100% calc(var(--hp)/2)}
+.tl-axis .tl-body{cursor:default}.tl-axis span{position:absolute;right:6px;font-size:.7rem;color:#a8a29a;transform:translateY(-50%);background:#141415;padding:0 2px}
+.tl-axis span:first-child{transform:none}
+.tl-x{position:absolute;left:0;right:0;background:repeating-linear-gradient(45deg,#19191b,#19191b 6px,#141415 6px,#141415 12px);pointer-events:none;opacity:.95}
+.tl-b{position:absolute;left:3px;right:3px;display:block;box-sizing:border-box;margin:0;padding:.2rem .4rem;border-radius:.55rem;border:1px solid #C9A24B;background:#2a2417;color:#f5f1e8;font:inherit;font-size:.75rem;line-height:1.2;text-align:left;overflow:hidden;cursor:pointer;z-index:2}
+.tl-b b{color:#E6C57A}.tl-b small{display:block;color:#a8a29a;font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-b.s-done{background:#15251a;border-color:#4d8f52}.tl-b.s-done b{color:#7BC47F}
+.tl-b.s-noshow{background:#2b1816;border-color:#b3584c}.tl-b.s-noshow b{color:#E07A6B}
+.tl-k{background:repeating-linear-gradient(45deg,#26262a,#26262a 6px,#1d1d20 6px,#1d1d20 12px);border-color:#4a4a50;color:#a8a29a;z-index:1}
+.tl-b:focus-visible,.tl-body:focus-visible{outline:3px solid rgba(201,162,75,.6);outline-offset:1px}
+.tl-now{position:absolute;left:46px;right:0;height:2px;background:#e0645a;z-index:3;pointer-events:none}
+.ag-li{display:flex;align-items:center}
+.bars{display:grid;gap:.35rem}.bar-r{display:grid;grid-template-columns:5.2rem 1fr 4.6rem;gap:.5rem;align-items:center;font-size:.8rem}
+.bar-l{color:#d6d0c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bar-t{background:#1d1d1f;border-radius:99px;height:.7rem;overflow:hidden}.bar-t i{display:block;height:100%;background:linear-gradient(90deg,#C9A24B,#E6C57A);border-radius:99px}.bar-v{text-align:right;color:#E6C57A;font-weight:700}
+@media(max-width:480px){.bar-r{grid-template-columns:4.2rem 1fr 4rem}}
+#pushmsg{margin:0 0 .5rem!important;min-height:0}#pushmsg:empty{display:none}
+#tools{margin-bottom:.5rem;gap:.4rem}#tools .bx-ghost{min-height:38px;padding:0 .8rem;font-size:.8rem}
+#tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-bottom:.6rem;padding-bottom:.1rem}#tabs::-webkit-scrollbar{display:none}#tabs .bx-chip{flex:none;min-height:40px}
+.ag-btns{flex-wrap:nowrap}.ag-btns .bx-btn,.ag-btns .bx-ghost{min-height:42px;padding:0 .85rem;font-size:.85rem;white-space:nowrap}
+.sh-t{text-transform:none;letter-spacing:0}
 </style>
 </head>
 <body>
 <main>
 <h1>Infinity Barber · Agenda</h1>
+<p id="who" class="bx-small" style="margin:-.6rem 0 .8rem"></p>
 <div id="login" class="cx" style="max-width:360px">
-<label class="bx-lab" for="tk">Contraseña del panel</label><input id="tk" class="bx-in" type="password" autocomplete="current-password">
+<label class="bx-lab" for="tk">Contraseña o clave de acceso</label><input id="tk" class="bx-in" type="password" autocomplete="current-password" autocapitalize="none" spellcheck="false">
 <label style="display:flex;gap:.5rem;align-items:center;margin:.6rem 0;font-size:.9rem;color:#d6d0c4"><input id="rm" type="checkbox" checked> Recordarme en este móvil</label>
 <p id="lm" class="bx-msg" role="status"></p><button id="lg" type="button" class="bx-btn" style="width:100%">Entrar</button>
 </div>
@@ -47,105 +87,8 @@ input,select{min-width:0}
 <div id="view"></div>
 </div>
 </main>
-<script>
-(function(){
-"use strict";
-var $=function(s,r){return (r||document).querySelector(s)};
-var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
-var eur=function(c){return (c/100).toFixed(2).replace(".",",")+" €"};
-var TOKEN=""; try{TOKEN=sessionStorage.getItem("bbt")||localStorage.getItem("bbt")||""}catch(e){}
-var TAB="agenda",DATE=new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Madrid"}).format(new Date()),CAT=null;
-function api(m,p,b){return fetch("/api/admin/"+p,{method:m,headers:Object.assign({"x-admin-token":TOKEN},b?{"content-type":"application/json"}:{}),body:b?JSON.stringify(b):undefined}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok){var e=new Error(j.error||"Error");e.status=r.status;throw e}return j})})}
-function addDays(d,n){var o=new Date(d+"T00:00:00Z");o.setUTCDate(o.getUTCDate()+n);return o.toISOString().slice(0,10)}
-function say(t){alert(t)}
-var TABSL=[["agenda","Agenda"],["avisos","Avisos WhatsApp"],["clientes","Clientes y puntos"],["canjes","Canjes"],["ajustes","Ajustes"],["resumen","Resumen"]];
-function shell(){$("#login").hidden=true;$("#app").hidden=false;$("#tabs").innerHTML=TABSL.map(function(t){return "<button type='button' class='bx-chip' data-t='"+t[0]+"' aria-pressed='"+(TAB===t[0])+"'>"+t[1]+"</button>"}).join("");
- document.querySelectorAll("#tabs [data-t]").forEach(function(b){b.addEventListener("click",function(){TAB=b.dataset.t;shell();show()})});show()}
-function show(){var v=$("#view");v.innerHTML="Cargando…";({agenda:agenda,avisos:avisos,clientes:clientes,canjes:canjes,ajustes:ajustes,resumen:resumen})[TAB](v).catch(function(e){if(e.status===401){try{sessionStorage.removeItem("bbt");localStorage.removeItem("bbt")}catch(x){}location.reload()}else v.innerHTML="<p class='bx-msg err'>"+esc(e.message)+"</p>"})}
-function catalog(){return CAT?Promise.resolve(CAT):api("GET","catalog").then(function(c){CAT=c;return c})}
 
-function agenda(v){return Promise.all([api("GET","agenda?date="+DATE),catalog()]).then(function(r){var a=r[0],c=r[1];
- var tags={booked:"",done:"<span class='tag done'>Realizada</span>",noshow:"<span class='tag noshow'>No vino</span>",cancelled:"<span class='tag cancelled'>Cancelada</span>"};
- v.innerHTML="<div class='bar'><button class='bx-ghost' id='pv'>←</button><input id='dt' type='date' class='bx-in' style='width:auto;margin:0' value='"+DATE+"'><button class='bx-ghost' id='nx'>→</button><button class='bx-ghost' id='td'>Hoy</button></div>"+
- (a.bookings.length?a.bookings.map(function(b){return "<div class='item'><div><b>"+esc(b.start_at.slice(11))+"–"+esc(b.end_at.slice(11))+" · "+esc(b.name)+"</b> "+(tags[b.status]||"")+(b.pay_status==="paid"?"<span class='tag done'>Pagado "+eur(b.pay_cents)+"</span>":b.pay_status==="pending"&&b.status==="booked"?"<span class='tag noshow'>Pago pendiente</span>":b.pay_status==="refunded"?"<span class='tag'>Reembolsado</span>":"")+"<small>"+esc(b.service_name)+" · "+eur(b.price_cents)+" · "+esc(b.barber)+" · "+esc(b.phone)+(b.email?" · "+esc(b.email):"")+(b.user_id?" · socio":"")+(b.source==="mostrador"?" · mostrador":"")+(b.note?"<br>Corte: "+esc(b.note):"")+"</small></div><div class='acts'>"+
-  (b.status==="booked"?"<button class='bx-btn' data-s='done' data-id='"+b.id+"'>Realizada</button><button class='bx-ghost' data-s='noshow' data-id='"+b.id+"'>No vino</button><button class='bx-ghost' data-s='cancelled' data-id='"+b.id+"'>Cancelar</button>":"<button class='bx-ghost' data-s='booked' data-id='"+b.id+"'>Reabrir</button>")+(b.pay_status==="paid"?"<button class='bx-ghost' data-rf='"+b.id+"'>Reembolsar</button>":"")+"</div></div>"}).join(""):"<p class='bx-small'>Sin citas este día.</p>")+
- (a.blocks.length?"<h2>Bloqueos</h2>"+a.blocks.map(function(b){return "<div class='item'><span>"+esc(b.start_at)+" → "+esc(b.end_at.slice(11))+" · "+esc(b.note||"Bloqueado")+"</span><button class='bx-ghost' data-ub='"+b.id+"'>Quitar</button></div>"}).join(""):"")+
- "<h2>Nueva cita (teléfono o mostrador)</h2><div class='row'><div><label class='bx-lab'>Nombre</label><input id='mn' class='bx-in'></div><div><label class='bx-lab'>Teléfono</label><input id='mp' class='bx-in' type='tel'></div><div><label class='bx-lab'>Servicio</label><select id='ms' class='bx-in'>"+c.services.filter(function(s){return s.active}).map(function(s){return "<option value='"+s.id+"'>"+esc(s.name)+"</option>"}).join("")+"</select></div><div><label class='bx-lab'>Barbero</label><select id='mb' class='bx-in'>"+c.barbers.filter(function(s){return s.active}).map(function(s){return "<option value='"+s.id+"'>"+esc(s.name)+"</option>"}).join("")+"</select></div><div><label class='bx-lab'>Hora</label><input id='mh' type='time' class='bx-in' step='900'></div><div><button class='bx-btn' id='mk' style='width:100%'>Crear</button></div></div>"+
- "<h2>Bloquear horas</h2><div class='row'><div><label class='bx-lab'>Desde</label><input id='bf' type='time' class='bx-in'></div><div><label class='bx-lab'>Hasta</label><input id='bt' type='time' class='bx-in'></div><div><label class='bx-lab'>Barbero</label><select id='bb' class='bx-in'><option value=''>Todos</option>"+c.barbers.map(function(s){return "<option value='"+s.id+"'>"+esc(s.name)+"</option>"}).join("")+"</select></div><div><label class='bx-lab'>Motivo</label><input id='bn' class='bx-in' placeholder='Médico, vacaciones…'></div><div><button class='bx-ghost' id='bk' style='width:100%'>Bloquear</button></div></div>";
- $("#pv").onclick=function(){DATE=addDays(DATE,-1);show()};$("#nx").onclick=function(){DATE=addDays(DATE,1);show()};$("#td").onclick=function(){DATE=new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Madrid"}).format(new Date());show()};$("#dt").onchange=function(e){if(e.target.value){DATE=e.target.value;show()}};
- v.querySelectorAll("[data-s]").forEach(function(b){b.onclick=function(){api("POST","status",{id:Number(b.dataset.id),status:b.dataset.s}).then(show).catch(function(e){say(e.message)})}});
- v.querySelectorAll("[data-rf]").forEach(function(b){b.onclick=function(){if(!confirm("¿Reembolsar el pago completo y cancelar la cita?"))return;api("POST","refund",{id:Number(b.dataset.rf)}).then(function(){say("Reembolso hecho");show()}).catch(function(e){say(e.message)})}});
- v.querySelectorAll("[data-ub]").forEach(function(b){b.onclick=function(){api("POST","unblock",{id:Number(b.dataset.ub)}).then(show)}});
- $("#mk").onclick=function(){if(!$("#mh").value){say("Elige la hora.");return}api("POST","book",{name:$("#mn").value,phone:$("#mp").value,service:Number($("#ms").value),barber:Number($("#mb").value),start:DATE+" "+$("#mh").value}).then(show).catch(function(e){say(e.message)})};
- $("#bk").onclick=function(){if(!$("#bf").value||!$("#bt").value){say("Indica desde y hasta.");return}api("POST","block",{start:DATE+" "+$("#bf").value,end:DATE+" "+$("#bt").value,barber:Number($("#bb").value)||null,note:$("#bn").value}).then(show).catch(function(e){say(e.message)})};
-})}
-
-function avisos(v){var d=addDays(new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Madrid"}).format(new Date()),1);return api("GET","reminders?date="+d).then(function(r){
- v.innerHTML="<h2>Citas de mañana ("+esc(r.date)+")</h2><p class='bx-small'>Los clientes con correo reciben el aviso solos (24 h y 2 h antes). Aquí tienes el botón de WhatsApp para quien prefiera o no dejó correo: se abre WhatsApp con el mensaje escrito.</p>"+
- (r.items.length?r.items.map(function(i){return "<div class='item'><div><b>"+esc(i.start_at.slice(11))+" · "+esc(i.name)+"</b><small>"+esc(i.service_name)+" · "+esc(i.phone)+"</small></div><a class='bx-btn' href='"+esc(i.link)+"' target='_blank' rel='noopener'>Avisar por WhatsApp</a></div>"}).join(""):"<p class='bx-small'>No hay citas mañana.</p>")})}
-
-function clientes(v){v.innerHTML="<div class='bar'><input id='q' class='bx-in' style='max-width:320px;margin:0' placeholder='Buscar nombre, correo o teléfono'><button class='bx-ghost' id='qs'>Buscar</button></div><div id='cl'></div>";
- function load(){return api("GET","clientes?q="+encodeURIComponent($("#q").value)).then(function(r){$("#cl").innerHTML=r.clients.length?r.clients.map(function(c){return "<div class='item'><div><b>"+esc(c.name)+"</b> <span class='tag'>"+c.points+" pts</span><small>"+esc(c.email)+(c.phone?" · "+esc(c.phone):"")+" · "+c.visits+" visitas"+(c.noshows?" · "+c.noshows+" no vino":"")+"</small></div><div class='acts'><button class='bx-ghost' data-p='"+c.id+"' data-d='10'>+10</button><button class='bx-ghost' data-p='"+c.id+"' data-d='-10'>−10</button><button class='bx-ghost' data-pc='"+c.id+"'>Otro…</button></div></div>"}).join(""):"<p class='bx-small'>Sin resultados.</p>";
-  document.querySelectorAll("#cl [data-p]").forEach(function(b){b.onclick=function(){api("POST","points",{userId:Number(b.dataset.p),delta:Number(b.dataset.d),reason:"Ajuste del local"}).then(load)}});
-  document.querySelectorAll("#cl [data-pc]").forEach(function(b){b.onclick=function(){var n=prompt("Puntos a sumar (negativo para restar):");if(!n)return;api("POST","points",{userId:Number(b.dataset.pc),delta:Number(n),reason:prompt("Motivo:")||"Ajuste del local"}).then(load).catch(function(e){say(e.message)})}})})}
- $("#qs").onclick=load;$("#q").onkeydown=function(e){if(e.key==="Enter")load()};return load()}
-
-function canjes(v){return api("GET","redemptions").then(function(r){v.innerHTML="<h2>Premios canjeados</h2><p class='bx-small'>El cliente te enseña su código; pulsa «Entregado» al darle el premio.</p>"+(r.redemptions.length?r.redemptions.map(function(x){return "<div class='item'><div><b>"+esc(x.reward_name)+"</b> <span class='tag'>"+(x.status==="open"?"pendiente":"entregado")+"</span><small>"+esc(x.name)+(x.phone?" · "+esc(x.phone):"")+" · "+esc(x.created_at)+"</small></div><div class='acts'><span class='cx-code'>"+esc(x.code)+"</span>"+(x.status==="open"?"<button class='bx-btn' data-u='"+x.id+"'>Entregado</button>":"")+"</div></div>"}).join(""):"<p class='bx-small'>Nada por ahora.</p>");
- v.querySelectorAll("[data-u]").forEach(function(b){b.onclick=function(){api("POST","redemption-use",{id:Number(b.dataset.u)}).then(show)}})})}
-
-function ajustes(v){CAT=null;return Promise.all([catalog(),api("GET","pay")]).then(function(rr){var c=rr[0],pay=rr[1];
- var days=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"],order=[1,2,3,4,5,6,0];
- v.innerHTML="<h2>Servicios</h2>"+c.services.map(function(s){return "<div class='row item' data-svc='"+s.id+"'><div><label class='bx-lab'>Nombre</label><input class='bx-in' data-k='name' value='"+esc(s.name)+"'></div><div><label class='bx-lab'>Minutos</label><input class='bx-in' data-k='minutes' type='number' value='"+s.minutes+"'></div><div><label class='bx-lab'>Precio €</label><input class='bx-in' data-k='price' value='"+(s.price_cents/100)+"'></div><div><label class='bx-lab'>Visible</label><select class='bx-in' data-k='active'><option value='1'"+(s.active?" selected":"")+">Sí</option><option value='0'"+(s.active?"":" selected")+">No</option></select></div><button class='bx-btn' data-save='svc'>Guardar</button></div>"}).join("")+
- "<div class='row item' data-svc=''><div><input class='bx-in' data-k='name' placeholder='Nuevo servicio'></div><div><input class='bx-in' data-k='minutes' type='number' placeholder='min'></div><div><input class='bx-in' data-k='price' placeholder='€'></div><div></div><button class='bx-ghost' data-save='svc'>Añadir</button></div>"+
- "<h2>Barberos</h2>"+c.barbers.map(function(s){return "<div class='row item' data-bar='"+s.id+"'><div><input class='bx-in' data-k='name' value='"+esc(s.name)+"'></div><div><select class='bx-in' data-k='active'><option value='1'"+(s.active?" selected":"")+">Activo</option><option value='0'"+(s.active?"":" selected")+">Inactivo</option></select></div><button class='bx-btn' data-save='bar'>Guardar</button></div>"}).join("")+
- "<div class='row item' data-bar=''><div><input class='bx-in' data-k='name' placeholder='Nuevo barbero'></div><div></div><button class='bx-ghost' data-save='bar'>Añadir</button></div>"+
- "<h2>Premios del club</h2>"+c.rewards.map(function(s){return "<div class='row item' data-rw='"+s.id+"'><div><input class='bx-in' data-k='name' value='"+esc(s.name)+"'></div><div><input class='bx-in' data-k='cost' type='number' value='"+s.cost+"'></div><div><select class='bx-in' data-k='active'><option value='1'"+(s.active?" selected":"")+">Activo</option><option value='0'"+(s.active?"":" selected")+">Oculto</option></select></div><button class='bx-btn' data-save='rw'>Guardar</button></div>"}).join("")+
- "<div class='row item' data-rw=''><div><input class='bx-in' data-k='name' placeholder='Nuevo premio'></div><div><input class='bx-in' data-k='cost' type='number' placeholder='puntos'></div><div></div><button class='bx-ghost' data-save='rw'>Añadir</button></div>"+
- "<h2>Horario (formato 10:00-14:00, 16:30-20:30; vacío = cerrado)</h2>"+order.map(function(d){var w=(c.hours[d]||[]).map(function(x){return x[0]+"-"+x[1]}).join(", ");return "<div class='row'><label class='bx-lab' style='margin:0'>"+days[d]+"</label><input class='bx-in' data-h='"+d+"' value='"+esc(w)+"' style='grid-column:span 2'></div>"}).join("")+"<button class='bx-btn' id='sh'>Guardar horario</button>"+
- "<h2>Pagos online (Stripe)</h2>"+(pay.stripe?"<p class='bx-small'>Stripe conectado"+(pay.live?" en <b>modo real</b>.":" en <b>modo de pruebas</b> (no se cobra dinero real).")+"</p>":"<p class='bx-small'>Stripe aún no está conectado: faltan las claves en Cloudflare (mira LEEME.md). Mientras tanto la web no pide pago.</p>")+"<div class='row'><div><label class='bx-lab'>Cómo se paga</label><select id='pm' class='bx-in'>"+[["off","Sin pago online (se paga en la barbería)"],["optional","El cliente elige: pagar ahora o en la barbería"],["deposit","Señal obligatoria para reservar"],["full","Pago completo obligatorio"]].map(function(o){return "<option value='"+o[0]+"'"+(pay.mode===o[0]?" selected":"")+">"+o[1]+"</option>"}).join("")+"</select></div><div><label class='bx-lab'>Importe de la señal (€)</label><input id='pd' class='bx-in' type='number' min='1' max='50' step='0.5' value='"+(pay.depositCents/100)+"'></div></div><button class='bx-btn' id='sp'>Guardar pagos</button>"+
- "<h2>Reglas</h2><div class='row'>"+[["stepMin","Intervalo entre citas (min)"],["leadMin","Antelación mínima (min)"],["cancelMin","Cancelar hasta (min antes)"],["maxDays","Días reservables"],["pointsPerEuro","Puntos por euro"],["welcomePoints","Puntos de bienvenida"],["referralPoints","Puntos por recomendar"]].map(function(k){return "<div><label class='bx-lab'>"+k[1]+"</label><input class='bx-in' data-r='"+k[0]+"' type='number' value='"+c.rules[k[0]]+"'></div>"}).join("")+"</div><button class='bx-btn' id='sr'>Guardar reglas</button>";
- function val(row,k){var e=row.querySelector("[data-k="+k+"]");return e?e.value:""}
- v.querySelectorAll("[data-save]").forEach(function(b){b.onclick=function(){var row=b.closest(".item"),t=b.dataset.save,body,path;
-  if(t==="svc"){path="service";body={id:Number(row.dataset.svc)||undefined,name:val(row,"name"),minutes:Number(val(row,"minutes")),price:val(row,"price"),active:val(row,"active")!=="0"}}
-  if(t==="bar"){path="barber";body={id:Number(row.dataset.bar)||undefined,name:val(row,"name"),active:val(row,"active")!=="0"}}
-  if(t==="rw"){path="reward";body={id:Number(row.dataset.rw)||undefined,name:val(row,"name"),cost:Number(val(row,"cost")),active:val(row,"active")!=="0"}}
-  api("POST",path,body).then(function(){CAT=null;show()}).catch(function(e){say(e.message)})}});
- $("#sh").onclick=function(){var h={};document.querySelectorAll("[data-h]").forEach(function(i){h[i.dataset.h]=i.value.split(",").map(function(p){var m=p.trim().match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);return m?[m[1].padStart(2,"0")+":"+m[2],m[3].padStart(2,"0")+":"+m[4]]:null}).filter(Boolean)});api("POST","hours",{hours:h}).then(function(){say("Horario guardado");CAT=null}).catch(function(e){say(e.message)})};
- $("#sp").onclick=function(){api("POST","pay",{mode:$("#pm").value,depositCents:Math.round(Number($("#pd").value)*100)}).then(function(){say("Pagos guardados")}).catch(function(e){say(e.message)})};
- $("#sr").onclick=function(){var b={};document.querySelectorAll("[data-r]").forEach(function(i){b[i.dataset.r]=Number(i.value)});api("POST","rules",b).then(function(){say("Reglas guardadas");CAT=null}).catch(function(e){say(e.message)})};
-})}
-
-function resumen(v){return api("GET","stats").then(function(s){v.innerHTML="<h2>Últimos 30 días</h2><div class='stats'><div class='stat'><b>"+s.total+"</b>citas</div><div class='stat'><b>"+(s.done||0)+"</b>realizadas</div><div class='stat'><b>"+(s.noshow||0)+"</b>no vinieron</div><div class='stat'><b>"+(s.cancelled||0)+"</b>canceladas</div><div class='stat'><b>"+eur(s.revenue||0)+"</b>facturado (realizadas)</div><div class='stat'><b>"+s.clients+"</b>socios del club</div></div>"})}
-
-function login(){TOKEN=$("#tk").value;api("GET","stats").then(function(){try{sessionStorage.setItem("bbt",TOKEN);if($("#rm").checked)localStorage.setItem("bbt",TOKEN);else localStorage.removeItem("bbt")}catch(e){}shell();setTimeout(askPush,900)}).catch(function(e){$("#lm").textContent=e.status===401?"Contraseña incorrecta.":e.message;$("#lm").className="bx-msg err"})}
-$("#lg").onclick=login;$("#tk").onkeydown=function(e){if(e.key==="Enter")login()};
-/* Avisos push y utilidades de la app del barbero */
-function pushState(){var m=$("#pushmsg"),b=$("#pushbtn"),t=$("#pushtest");if(!window.BBPWA){return}
- BBPWA.current().then(function(sub){var on=!!sub&&Notification.permission==="granted";b.textContent=on?"🔕 Desactivar avisos":"🔔 Activar avisos de citas";b.dataset.on=on?"1":"";t.hidden=!on;
-  m.className="bx-msg";m.textContent=on?"Avisos activados en este móvil: te llegará una notificación con cada cita nueva o cancelada.":(window.Notification&&Notification.permission==="denied"?"Las notificaciones están bloqueadas. Actívalas en los ajustes del móvil: mantén pulsado el icono de la app → Información de la app → Notificaciones → Permitir. Después vuelve aquí y pulsa Activar.":BBPWA.ios&&!BBPWA.standalone()?"En iPhone: instala primero la app (Compartir → Añadir a pantalla de inicio) y ábrela desde el icono para activar los avisos.":"")})}
-$("#pushbtn").onclick=function(){var b=this,m=$("#pushmsg");if(!window.BBPWA){return}b.disabled=true;
- var op=b.dataset.on?BBPWA.unsubscribe({admin:true,token:TOKEN}):BBPWA.subscribe({admin:true,token:TOKEN});
- op.then(function(){b.disabled=false;pushState()}).catch(function(e){b.disabled=false;m.className="bx-msg err";m.textContent=e&&e.friendly?e.message:"No se pudo cambiar el aviso."})};
-$("#pushtest").onclick=function(){var m=$("#pushmsg");api("POST","push/test",{}).then(function(){m.className="bx-msg ok";m.textContent="Enviado: en unos segundos debería sonar el aviso."}).catch(function(e){m.className="bx-msg err";m.textContent=e.message})};
-$("#out").onclick=function(){try{sessionStorage.removeItem("bbt");localStorage.removeItem("bbt")}catch(x){}location.reload()};
-
-/* Aviso automático la primera vez: pide activar las notificaciones con un toque */
-function askPush(){
- try{if(!window.BBPWA||!BBPWA.supported()||!window.Notification||Notification.permission!=="default")return;
-  if(BBPWA.ios&&!BBPWA.standalone())return;if(localStorage.getItem("bbpa"))return}catch(e){return}
- BBPWA.current().then(function(sub){if(sub)return;
-  var d=document.createElement("dialog");d.setAttribute("aria-labelledby","pa-t");
-  d.style.cssText="max-width:24rem;width:calc(100% - 2rem);margin:auto;box-sizing:border-box;border:1px solid #3a3a3d;border-radius:1.2rem;background:#171718;color:#F5F1E8;padding:1.4rem;font:inherit";
-  d.innerHTML="<h2 id='pa-t' style='margin:0 0 .5rem;font-size:1.15rem;letter-spacing:0;text-transform:none;color:#E6C57A'>🔔 No te pierdas ninguna cita</h2><p style='margin:0 0 1rem;line-height:1.5;color:#d6d0c4'>Activa los avisos y te sonará el móvil cuando entre una cita nueva, cambie o se cancele, aunque tengas la app cerrada.</p><button type='button' id='pa-y' class='bx-btn' style='width:100%;margin-bottom:.5rem'>Activar avisos ahora</button><button type='button' id='pa-n' class='bx-ghost' style='width:100%'>Más tarde</button>";
-  function fin(){try{localStorage.setItem("bbpa",String(Date.now()))}catch(e){}d.close();d.remove()}
-  d.querySelector("#pa-y").onclick=function(){fin();$("#pushbtn").click()};
-  d.querySelector("#pa-n").onclick=fin;d.addEventListener("cancel",function(){try{localStorage.setItem("bbpa",String(Date.now()))}catch(e){}});
-  document.body.appendChild(d);d.showModal()})}
-window.addEventListener("load",function(){setTimeout(pushState,300)});
-document.addEventListener("visibilitychange",function(){if(!document.hidden&&TOKEN&&TAB==="agenda"&&!$("#app").hidden)show()});
-if(TOKEN){api("GET","stats").then(function(){shell();setTimeout(askPush,900)}).catch(function(){})}
-})();
-</script>
 <script src="pwa.js" defer></script>
+<script src="admin.js" defer></script>
 </body>
 </html>
