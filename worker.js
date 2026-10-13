@@ -1,5 +1,6 @@
 // worker.js · API de Infinity Barber (Cloudflare Workers + D1)
 // Reservas con huecos reales, cuentas, club de puntos, recordatorios por correo (Cron) y panel de administración.
+// Push:    GET /api/push/key · POST /api/push/{subscribe,unsubscribe}  ·  Admin: /api/admin/push/{subscribe,unsubscribe,count,test}
 // Público: GET /api/config · GET /api/availability · POST /api/book · GET /api/booking · POST /api/cancel
 //          /api/auth/{register,login,logout,forgot,reset,marketing,delete} · GET /api/me · POST /api/club/redeem · POST /api/tryon
 // Admin:   /api/admin/*  (cabecera x-admin-token)
@@ -20,6 +21,7 @@ export default {
     try {
       if (path.startsWith("/api/auth/")) return await auth(request, env, url, ctx);
       if (path.startsWith("/api/admin/")) return await admin(request, env, url, ctx);
+      if (path.startsWith("/api/push/")) return await pushPublic(request, env, url, ctx);
       if (path === "/api/config" && request.method === "GET") return await config(env);
       if (path === "/api/availability" && request.method === "GET") return await availability(env, url);
       if (path === "/api/book" && request.method === "POST") return await book(request, env, url, ctx);
@@ -353,22 +355,29 @@ async function sendReminders(env) {
   // 24 h antes: citas entre dentro de 2 h y dentro de 25 h aún sin recordatorio de 24 h
   const due24 = await env.DB.prepare(
     `SELECT b.id, b.code, b.name, b.email, b.service_name, b.price_cents, b.start_at, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id
-     WHERE b.status = 'booked' AND b.pay_status != 'pending' AND b.r24 = 0 AND b.email IS NOT NULL AND b.email != '' AND b.start_at > ?1 AND b.start_at <= ?2`
+     WHERE b.status = 'booked' AND b.pay_status != 'pending' AND b.r24 = 0 AND ((b.email IS NOT NULL AND b.email != '') OR EXISTS (SELECT 1 FROM push_subs p WHERE p.booking_code = b.code AND p.role = 'client')) AND b.start_at > ?1 AND b.start_at <= ?2`
   ).bind(addMin(now, 120), addMin(now, 25 * 60)).all();
   for (const b of due24.results) {
     const claimed = await env.DB.prepare("UPDATE bookings SET r24 = 1 WHERE id = ?1 AND r24 = 0").bind(b.id).run();
-    if (claimed.meta.changes) await mailReminder(env, b, "Mañana tienes cita", env.SITE_URL || "");
+    if (claimed.meta.changes) {
+      if (b.email) await mailReminder(env, b, "Mañana tienes cita", env.SITE_URL || "");
+      await pushBooking(env, b.code, "Mañana tienes cita", `${b.service_name} con ${b.barber_name} · ${fmtDate(b.start_at)}`);
+    }
   }
   // 2 h antes
   const due2 = await env.DB.prepare(
     `SELECT b.id, b.code, b.name, b.email, b.service_name, b.price_cents, b.start_at, br.name AS barber_name FROM bookings b JOIN barbers br ON br.id = b.barber_id
-     WHERE b.status = 'booked' AND b.pay_status != 'pending' AND b.r2 = 0 AND b.email IS NOT NULL AND b.email != '' AND b.start_at > ?1 AND b.start_at <= ?2`
+     WHERE b.status = 'booked' AND b.pay_status != 'pending' AND b.r2 = 0 AND ((b.email IS NOT NULL AND b.email != '') OR EXISTS (SELECT 1 FROM push_subs p WHERE p.booking_code = b.code AND p.role = 'client')) AND b.start_at > ?1 AND b.start_at <= ?2`
   ).bind(now, addMin(now, 135)).all();
   for (const b of due2.results) {
     const claimed = await env.DB.prepare("UPDATE bookings SET r2 = 1, r24 = 1 WHERE id = ?1 AND r2 = 0").bind(b.id).run();
-    if (claimed.meta.changes) await mailReminder(env, b, "Tu cita es en un par de horas", env.SITE_URL || "");
+    if (claimed.meta.changes) {
+      if (b.email) await mailReminder(env, b, "Tu cita es en un par de horas", env.SITE_URL || "");
+      await pushBooking(env, b.code, "Tu cita es en un par de horas", `${b.service_name} con ${b.barber_name} · ${fmtDate(b.start_at)}`);
+    }
   }
   await env.DB.prepare("DELETE FROM auth_attempts WHERE ts < ?1").bind(Math.floor(Date.now() / 1000) - 86400).run();
+  await env.DB.prepare("DELETE FROM push_subs WHERE role = 'client' AND created_at < datetime('now', '-60 days')").run();
   return due24.results.length + due2.results.length;
 }
 
@@ -621,6 +630,24 @@ async function admin(request, env, url, ctx) {
   const body = post ? await getJson(request) : {};
   const q = url.searchParams;
 
+  if (route === "push/subscribe" && post) {
+    const err = await saveSub(env, body.sub, "admin", "");
+    return err ? json({ error: err }, 400) : json({ ok: true });
+  }
+  if (route === "push/unsubscribe" && post) {
+    await env.DB.prepare("DELETE FROM push_subs WHERE endpoint = ?1 AND role = 'admin'").bind(String(body.endpoint || "")).run();
+    return json({ ok: true });
+  }
+  if (route === "push/count" && !post) {
+    const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM push_subs WHERE role = 'admin'").first();
+    return json({ devices: n ? n.n : 0 });
+  }
+  if (route === "push/test" && post) {
+    const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM push_subs WHERE role = 'admin'").first();
+    if (!n || !n.n) return json({ error: "Aún no hay ningún móvil con los avisos activados." }, 409);
+    await pushAdmins(env, "Aviso de prueba", "Si ves esto, recibirás las citas nuevas en este móvil.", "prueba");
+    return json({ ok: true });
+  }
   if (route === "agenda" && !post) {
     const date = DATE_RE.test(q.get("date") || "") ? q.get("date") : nowLocal(env).slice(0, 10);
     const [bk, bl] = await Promise.all([
@@ -904,8 +931,118 @@ async function markPaid(env, ctx, code, o, origin) {
   }
 }
 
+/* ------------------------------------------------------------------ avisos push (Web Push · VAPID + cifrado RFC 8291) */
+// Gratis y sin servicios de terceros de pago. Las claves VAPID se crean solas la primera vez y se guardan en la tabla settings
+// (o se pueden fijar con VAPID_PUBLIC + VAPID_PRIVATE_JWK). El servidor solo envía a servicios de push conocidos (anti-SSRF).
+const PUSH_HOSTS = ["fcm.googleapis.com", "updates.push.services.mozilla.com", "push.services.mozilla.com", "web.push.apple.com", "push.apple.com", "notify.windows.com", "push.microsoft.com"];
+const MAX_SUBS_PER_BOOKING = 4;
+function pushHostOk(endpoint) {
+  let u; try { u = new URL(endpoint); } catch { return false; }
+  if (u.protocol !== "https:" || u.port || u.username || u.password) return false;
+  return PUSH_HOSTS.some((h) => u.hostname === h || u.hostname.endsWith("." + h));
+}
+function b64u(buf) { let s = ""; for (const x of new Uint8Array(buf)) s += String.fromCharCode(x); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function unb64u(s) { const t = String(s).replace(/-/g, "+").replace(/_/g, "/"); const bin = atob(t + "=".repeat((4 - (t.length % 4)) % 4)); const o = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) o[i] = bin.charCodeAt(i); return o; }
+function concat(...parts) { const o = new Uint8Array(parts.reduce((n, p) => n + p.length, 0)); let i = 0; for (const p of parts) { o.set(p, i); i += p.length; } return o; }
+
+async function getVapid(env) {
+  if (env.VAPID_PUBLIC && env.VAPID_PRIVATE_JWK) { try { return { pub: env.VAPID_PUBLIC, jwk: JSON.parse(env.VAPID_PRIVATE_JWK) }; } catch { /* usa las guardadas */ } }
+  let v = await setting(env, "vapid", null);
+  if (!v) {
+    const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+    const rec = { pub: b64u(await crypto.subtle.exportKey("raw", kp.publicKey)), jwk: await crypto.subtle.exportKey("jwk", kp.privateKey) };
+    await env.DB.prepare("INSERT OR IGNORE INTO settings (k, v) VALUES ('vapid', ?1)").bind(JSON.stringify(rec)).run();
+    v = await setting(env, "vapid", rec); // si dos peticiones compiten, gana la primera guardada
+  }
+  return v;
+}
+async function vapidHeader(env, endpoint) {
+  const v = await getVapid(env);
+  const key = await crypto.subtle.importKey("jwk", v.jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  const head = b64u(te.encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
+  const claims = b64u(te.encode(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: "mailto:" + (env.OWNER_EMAIL || env.MAIL_FROM || "admin@example.com") })));
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, te.encode(head + "." + claims));
+  return `vapid t=${head}.${claims}.${b64u(sig)}, k=${v.pub}`;
+}
+async function hkdf(ikm, salt, info, len) {
+  const k = await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info }, k, len * 8));
+}
+// Cifra el mensaje para un navegador concreto (aes128gcm, RFC 8291)
+async function encryptPush(sub, plain) {
+  const ua = unb64u(sub.p256dh), authSecret = unb64u(sub.auth);
+  const eph = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const asPub = new Uint8Array(await crypto.subtle.exportKey("raw", eph.publicKey));
+  const uaKey = await crypto.subtle.importKey("raw", ua, { name: "ECDH", namedCurve: "P-256" }, false, []);
+  const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: uaKey }, eph.privateKey, 256));
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const ikm = await hkdf(shared, authSecret, concat(te.encode("WebPush: info\0"), ua, asPub), 32);
+  const cek = await hkdf(ikm, salt, te.encode("Content-Encoding: aes128gcm\0"), 16);
+  const nonce = await hkdf(ikm, salt, te.encode("Content-Encoding: nonce\0"), 12);
+  const aes = await crypto.subtle.importKey("raw", cek, "AES-GCM", false, ["encrypt"]);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aes, concat(plain, new Uint8Array([2]))));
+  return concat(salt, new Uint8Array([0, 0, 0x10, 0, asPub.length]), asPub, ct);
+}
+async function sendPush(env, sub, payload, urgency = "normal") {
+  try {
+    if (!pushHostOk(sub.endpoint)) return false;
+    const res = await fetch(sub.endpoint, {
+      method: "POST",
+      headers: { Authorization: await vapidHeader(env, sub.endpoint), "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream", TTL: "86400", Urgency: urgency },
+      body: await encryptPush(sub, te.encode(JSON.stringify(payload))),
+    });
+    if (res.status === 404 || res.status === 410) await env.DB.prepare("DELETE FROM push_subs WHERE endpoint = ?1").bind(sub.endpoint).run();
+    else if (!res.ok) console.error("push rechazado:", res.status);
+    return res.ok;
+  } catch (e) { console.error("push", e && e.message); return false; }
+}
+async function pushAdmins(env, title, body, tag) {
+  const subs = await env.DB.prepare("SELECT endpoint, p256dh, auth FROM push_subs WHERE role = 'admin'").all();
+  await Promise.allSettled(subs.results.map((s) => sendPush(env, s, { title, body, url: "/admin.html", tag: tag || "cita", admin: true }, "high")));
+}
+async function pushBooking(env, code, title, body) {
+  const subs = await env.DB.prepare("SELECT endpoint, p256dh, auth FROM push_subs WHERE role = 'client' AND booking_code = ?1").bind(code).all();
+  await Promise.allSettled(subs.results.map((s) => sendPush(env, s, { title, body, url: "/?cita=" + encodeURIComponent(code), tag: "cita-" + code }, "high")));
+}
+async function saveSub(env, sub, role, code) {
+  const k = sub && sub.keys;
+  if (!sub || typeof sub.endpoint !== "string" || sub.endpoint.length > 700 || !pushHostOk(sub.endpoint) || !k) return "Aviso no válido.";
+  let ok = false;
+  try { ok = unb64u(k.p256dh).length === 65 && unb64u(k.auth).length === 16; } catch { ok = false; }
+  if (!ok) return "Aviso no válido.";
+  await env.DB.prepare(
+    "INSERT INTO push_subs (endpoint, p256dh, auth, role, booking_code) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(endpoint, role, booking_code) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth"
+  ).bind(sub.endpoint, k.p256dh, k.auth, role, code).run();
+  return "";
+}
+async function pushPublic(request, env, url, ctx) {
+  const route = url.pathname.slice("/api/push/".length);
+  if (route === "key" && request.method === "GET") return json({ key: (await getVapid(env)).pub });
+  if (request.method !== "POST") return json({ error: "No encontrado" }, 404);
+  if (!sameOrigin(request, url)) return json({ error: "Origen no permitido." }, 403);
+  const ip = request.headers.get("cf-connecting-ip") || "0.0.0.0";
+  if (await tooMany(env, [`push:ip:${ip}`], 20)) return TOO_MANY();
+  await hit(env, [`push:ip:${ip}`]);
+  const body = await getJson(request);
+  if (route === "unsubscribe") {
+    await env.DB.prepare("DELETE FROM push_subs WHERE endpoint = ?1 AND role = 'client'").bind(String(body.endpoint || "")).run();
+    return json({ ok: true });
+  }
+  if (route === "subscribe") {
+    const code = String(body.code || "");
+    const b = /^[0-9a-f]{24}$/.test(code) ? await env.DB.prepare("SELECT status FROM bookings WHERE code = ?1").bind(code).first() : null;
+    if (!b || b.status !== "booked") return json({ error: "No encontramos esa cita." }, 404);
+    const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM push_subs WHERE booking_code = ?1 AND role = 'client'").bind(code).first();
+    if (n && n.n >= MAX_SUBS_PER_BOOKING) return json({ error: "Esta cita ya tiene avisos activados en varios dispositivos." }, 409);
+    const err = await saveSub(env, body.sub, "client", code);
+    return err ? json({ error: err }, 400) : json({ ok: true });
+  }
+  return json({ error: "No encontrado" }, 404);
+}
+
 /* ------------------------------------------------------------------ correo (Brevo) */
 async function alertOwner(env, title, detail, info) {
+  if (info) await pushAdmins(env, title, String(detail || "").slice(0, 160), "cita").catch((e) => console.error("pushAdmins", e && e.message));
   try {
     if (!env.OWNER_EMAIL) return;
     const inner = `<p style="font-size:14px;line-height:1.5">${info ? "" : "Se ha producido un problema en la web."}</p><p style="font-size:14px;background:#f6f4f0;padding:10px 12px;border-radius:8px;word-break:break-word">${escHtml(String(detail || "sin detalle").slice(0, 300))}</p>`;

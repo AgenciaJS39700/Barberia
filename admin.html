@@ -4,7 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Panel · Infinity Barber</title>
+<meta name="theme-color" content="#C9A24B">
+<link rel="manifest" href="/admin.webmanifest">
+<link rel="apple-touch-icon" href="/icons/admin-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Agenda">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Agenda · Infinity Barber</title>
 <link rel="stylesheet" href="app.css">
 <style>
 body{margin:0;background:#0f0f10;color:#f5f1e8;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.4}
@@ -27,12 +34,15 @@ input,select{min-width:0}
 </head>
 <body>
 <main>
-<h1>Infinity Barber · Panel</h1>
+<h1>Infinity Barber · Agenda</h1>
 <div id="login" class="cx" style="max-width:360px">
 <label class="bx-lab" for="tk">Contraseña del panel</label><input id="tk" class="bx-in" type="password" autocomplete="current-password">
+<label style="display:flex;gap:.5rem;align-items:center;margin:.6rem 0;font-size:.9rem;color:#d6d0c4"><input id="rm" type="checkbox" checked> Recordarme en este móvil</label>
 <p id="lm" class="bx-msg" role="status"></p><button id="lg" type="button" class="bx-btn" style="width:100%">Entrar</button>
 </div>
 <div id="app" hidden>
+<div class="bar" id="tools" style="justify-content:space-between"><div class="acts"><button type="button" class="bx-ghost" id="pushbtn">🔔 Avisos de citas</button><button type="button" class="bx-ghost" id="pushtest" hidden>Probar aviso</button><button type="button" class="bx-ghost" data-install hidden>Instalar la app</button></div><button type="button" class="bx-ghost" id="out">Salir</button></div>
+<p id="pushmsg" class="bx-msg" role="status" style="margin:.2rem 0 .8rem"></p>
 <div class="bar" role="tablist" id="tabs"></div>
 <div id="view"></div>
 </div>
@@ -43,7 +53,7 @@ input,select{min-width:0}
 var $=function(s,r){return (r||document).querySelector(s)};
 var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
 var eur=function(c){return (c/100).toFixed(2).replace(".",",")+" €"};
-var TOKEN=""; try{TOKEN=sessionStorage.getItem("bbt")||""}catch(e){}
+var TOKEN=""; try{TOKEN=sessionStorage.getItem("bbt")||localStorage.getItem("bbt")||""}catch(e){}
 var TAB="agenda",DATE=new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Madrid"}).format(new Date()),CAT=null;
 function api(m,p,b){return fetch("/api/admin/"+p,{method:m,headers:Object.assign({"x-admin-token":TOKEN},b?{"content-type":"application/json"}:{}),body:b?JSON.stringify(b):undefined}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok){var e=new Error(j.error||"Error");e.status=r.status;throw e}return j})})}
 function addDays(d,n){var o=new Date(d+"T00:00:00Z");o.setUTCDate(o.getUTCDate()+n);return o.toISOString().slice(0,10)}
@@ -51,7 +61,7 @@ function say(t){alert(t)}
 var TABSL=[["agenda","Agenda"],["avisos","Avisos WhatsApp"],["clientes","Clientes y puntos"],["canjes","Canjes"],["ajustes","Ajustes"],["resumen","Resumen"]];
 function shell(){$("#login").hidden=true;$("#app").hidden=false;$("#tabs").innerHTML=TABSL.map(function(t){return "<button type='button' class='bx-chip' data-t='"+t[0]+"' aria-pressed='"+(TAB===t[0])+"'>"+t[1]+"</button>"}).join("");
  document.querySelectorAll("#tabs [data-t]").forEach(function(b){b.addEventListener("click",function(){TAB=b.dataset.t;shell();show()})});show()}
-function show(){var v=$("#view");v.innerHTML="Cargando…";({agenda:agenda,avisos:avisos,clientes:clientes,canjes:canjes,ajustes:ajustes,resumen:resumen})[TAB](v).catch(function(e){if(e.status===401){try{sessionStorage.removeItem("bbt")}catch(x){}location.reload()}else v.innerHTML="<p class='bx-msg err'>"+esc(e.message)+"</p>"})}
+function show(){var v=$("#view");v.innerHTML="Cargando…";({agenda:agenda,avisos:avisos,clientes:clientes,canjes:canjes,ajustes:ajustes,resumen:resumen})[TAB](v).catch(function(e){if(e.status===401){try{sessionStorage.removeItem("bbt");localStorage.removeItem("bbt")}catch(x){}location.reload()}else v.innerHTML="<p class='bx-msg err'>"+esc(e.message)+"</p>"})}
 function catalog(){return CAT?Promise.resolve(CAT):api("GET","catalog").then(function(c){CAT=c;return c})}
 
 function agenda(v){return Promise.all([api("GET","agenda?date="+DATE),catalog()]).then(function(r){var a=r[0],c=r[1];
@@ -107,10 +117,22 @@ function ajustes(v){CAT=null;return Promise.all([catalog(),api("GET","pay")]).th
 
 function resumen(v){return api("GET","stats").then(function(s){v.innerHTML="<h2>Últimos 30 días</h2><div class='stats'><div class='stat'><b>"+s.total+"</b>citas</div><div class='stat'><b>"+(s.done||0)+"</b>realizadas</div><div class='stat'><b>"+(s.noshow||0)+"</b>no vinieron</div><div class='stat'><b>"+(s.cancelled||0)+"</b>canceladas</div><div class='stat'><b>"+eur(s.revenue||0)+"</b>facturado (realizadas)</div><div class='stat'><b>"+s.clients+"</b>socios del club</div></div>"})}
 
-function login(){TOKEN=$("#tk").value;api("GET","stats").then(function(){try{sessionStorage.setItem("bbt",TOKEN)}catch(e){}shell()}).catch(function(e){$("#lm").textContent=e.status===401?"Contraseña incorrecta.":e.message;$("#lm").className="bx-msg err"})}
+function login(){TOKEN=$("#tk").value;api("GET","stats").then(function(){try{sessionStorage.setItem("bbt",TOKEN);if($("#rm").checked)localStorage.setItem("bbt",TOKEN);else localStorage.removeItem("bbt")}catch(e){}shell()}).catch(function(e){$("#lm").textContent=e.status===401?"Contraseña incorrecta.":e.message;$("#lm").className="bx-msg err"})}
 $("#lg").onclick=login;$("#tk").onkeydown=function(e){if(e.key==="Enter")login()};
+/* Avisos push y utilidades de la app del barbero */
+function pushState(){var m=$("#pushmsg"),b=$("#pushbtn"),t=$("#pushtest");if(!window.BBPWA){return}
+ BBPWA.current().then(function(sub){var on=!!sub&&Notification.permission==="granted";b.textContent=on?"🔕 Desactivar avisos":"🔔 Activar avisos de citas";b.dataset.on=on?"1":"";t.hidden=!on;
+  m.className="bx-msg";m.textContent=on?"Avisos activados en este móvil: te llegará una notificación con cada cita nueva o cancelada.":(BBPWA.ios&&!BBPWA.standalone()?"En iPhone: instala primero la app (Compartir → Añadir a pantalla de inicio) y ábrela desde el icono para activar los avisos.":"")})}
+$("#pushbtn").onclick=function(){var b=this,m=$("#pushmsg");if(!window.BBPWA){return}b.disabled=true;
+ var op=b.dataset.on?BBPWA.unsubscribe({admin:true,token:TOKEN}):BBPWA.subscribe({admin:true,token:TOKEN});
+ op.then(function(){b.disabled=false;pushState()}).catch(function(e){b.disabled=false;m.className="bx-msg err";m.textContent=e&&e.friendly?e.message:"No se pudo cambiar el aviso."})};
+$("#pushtest").onclick=function(){var m=$("#pushmsg");api("POST","push/test",{}).then(function(){m.className="bx-msg ok";m.textContent="Enviado: en unos segundos debería sonar el aviso."}).catch(function(e){m.className="bx-msg err";m.textContent=e.message})};
+$("#out").onclick=function(){try{sessionStorage.removeItem("bbt");localStorage.removeItem("bbt")}catch(x){}location.reload()};
+window.addEventListener("load",function(){setTimeout(pushState,300)});
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&TOKEN&&TAB==="agenda"&&!$("#app").hidden)show()});
 if(TOKEN){api("GET","stats").then(shell).catch(function(){})}
 })();
 </script>
+<script src="pwa.js" defer></script>
 </body>
 </html>

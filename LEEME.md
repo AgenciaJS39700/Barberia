@@ -43,3 +43,20 @@ Funciona con Stripe Checkout (página de pago de Stripe, sin datos de tarjeta en
 Reglas: el hueco queda retenido ~30 min mientras se paga; si no se paga, se libera solo. **El pago online es completo y NO reembolsable**: el cliente acepta una casilla al reservar y solo puede *cambiar la fecha* (hasta las horas de «Cancelar hasta», máx. 2 cambios, desde el enlace del correo o su cuenta). Las citas pagadas en la barbería sí se cancelan gratis. El dueño puede reembolsar una excepción desde la agenda (botón «Reembolsar»). Aviso: revisar con un profesional que esta condición encaja con la normativa de consumo.
 
 Base de datos ya creada: ejecutar también `migrations/002_cambios_de_fecha.sql` (columna `moves`).
+
+
+## App instalable (PWA) y app del barbero
+
+La web se instala en el móvil como una app (icono propio, pantalla completa, abre sin conexión). No pasa por Apple ni Google y no cuesta nada.
+
+- **Clientes:** en Android aparece «Instalar la app» (pie de la web y tras reservar); en iPhone, Safari → Compartir → *Añadir a pantalla de inicio* (la web lo explica). Atajos al mantener pulsado el icono: Reservar, Club y Encuentra tu corte.
+- **Barbero:** abrir `/admin.html` en su móvil → *Instalar la app* (queda como «Agenda», con icono dorado) → entrar con la contraseña marcando *Recordarme en este móvil* → pulsar **🔔 Activar avisos de citas** → *Probar aviso*. Desde ese momento cada cita nueva, cambio o cancelación le llega como notificación. En iPhone hay que abrir la app desde el icono para poder activar los avisos.
+- **Avisos al cliente (opcional):** al reservar o desde el enlace de su cita puede pulsar *Avisarme en este móvil* y recibe los recordatorios de 24 h y 2 h también como notificación (además del correo).
+
+**Puesta en marcha:** ejecutar `migrations/003_push.sql` en la D1 (ya aplicada en `barberia`). Las claves de los avisos (VAPID) se crean solas la primera vez y se guardan en la tabla `settings`; no hay que configurar secretos. Opcional: fijarlas con `VAPID_PUBLIC` y `VAPID_PRIVATE_JWK`.
+
+**Archivos nuevos:** `manifest.webmanifest` · `admin.webmanifest` · `sw.js` (service worker: caché y avisos) · `pwa.js` · `offline.html` · `icons/`. Si cambias el logo, regenera `icons/` y sube `VERSION` en `sw.js`.
+
+**Seguridad:** el Worker solo envía avisos a los servicios de push oficiales (Google, Mozilla, Apple, Microsoft); las suscripciones de clientes exigen una cita real y se limitan a 4 dispositivos por cita; las de barbero exigen la contraseña del panel. Nunca se cachea `/api/*`.
+
+**Límites que conviene saber:** no aparece en App Store ni Google Play (para eso haría falta una app nativa o un envoltorio con Capacitor y cuentas de desarrollador: ~99 $/año Apple y 25 $ Google). Las notificaciones push en iPhone requieren iOS 16.4 o superior y la app instalada.

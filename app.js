@@ -187,13 +187,27 @@ function submitBooking() {
   });
 }
 
+/* Avisos push de la cita (opcional, gratis): botón que activa los recordatorios en este móvil */
+function wirePush(btn, out, code) {
+  if (!btn) return;
+  if (!window.BBPWA) { btn.hidden = true; return; }
+  btn.addEventListener("click", function () {
+    btn.disabled = true; out.textContent = "";
+    BBPWA.subscribe({ code: code }).then(function () { out.className = "bx-msg ok"; out.textContent = "Listo: te avisaremos en este móvil antes de tu cita."; btn.hidden = true; })
+      .catch(function (e) { btn.disabled = false; out.className = "bx-msg err"; out.textContent = e && e.friendly ? e.message : "No se pudo activar el aviso."; });
+  });
+}
+
 function showBooked(b, hasEmail) {
   var cal = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("Cita en Infinity Barber") + "&dates=" + b.start.replace(/[-: ]/g, "").slice(0, 13) + "00/" + b.start.replace(/[-: ]/g, "").slice(0, 13) + "00&ctz=Europe%2FMadrid";
   root.innerHTML = "<div class='bk-ok'><div class='tick' aria-hidden='true'>✓</div><h3 style='margin:0 0 .5rem;font-size:1.3rem;color:var(--bone);text-transform:none;letter-spacing:0'>¡Cita confirmada!</h3>" +
     "<p style='font-size:1.05rem;line-height:1.6'><b>" + esc(b.whenText) + "</b><br>" + esc(b.service) + " · " + eur(b.price_cents) + (b.barber ? "<br>Con " + esc(b.barber) : "") + "</p>" +
     "<p class='bx-small' style='margin:1rem 0'>" + (hasEmail ? "Te hemos enviado la confirmación por correo y te avisaremos 24 h antes." : "Guarda esta página: no dejaste correo, así que no recibirás recordatorio. Te avisaremos por WhatsApp si hace falta.") + "</p>" +
-    "<div style='display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center'><a class='bx-ghost' href='" + esc(cal) + "' target='_blank' rel='noopener'>Añadir al calendario</a><a class='bx-ghost' href='?cita=" + esc(b.code) + "'>Ver o cancelar</a><button type='button' class='bx-ghost' id='bk-again'>Otra cita</button></div></div>";
+    "<div style='display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center'><a class='bx-ghost' href='" + esc(cal) + "' target='_blank' rel='noopener'>Añadir al calendario</a><a class='bx-ghost' href='?cita=" + esc(b.code) + "'>Ver o cancelar</a><button type='button' class='bx-ghost' id='bk-again'>Otra cita</button></div>" +
+    "<div style='display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-top:.8rem'><button type='button' class='bx-ghost' id='bk-push'>🔔 Avisarme en este móvil</button><button type='button' class='bx-ghost' data-install hidden>Instalar la app</button></div><p id='bk-push-msg' class='bx-msg' role='status'></p></div>";
   $("#bk-again", root).addEventListener("click", function () { S.time = null; renderBooking(); loadSlots(); });
+  wirePush($("#bk-push", root), $("#bk-push-msg", root), b.code);
+  if (window.BBPWA) { BBPWA.refresh(); }
   if (USER) { refreshMe(); }
   root.scrollIntoView({ behavior: "smooth", block: "center" });
 }
@@ -396,6 +410,7 @@ function showCita(cita, pago, tries) {
     }
     var d = showDlg(top(pago === "ok" && b.pay_status === "paid" ? "¡Cita confirmada!" : "Tu cita") + "<p style='font-size:1.1rem;line-height:1.6'><b>" + esc(b.whenText) + "</b><br>" + esc(b.service) + " · " + eur(b.price_cents) + "<br>Con " + esc(b.barber) + "</p>" + note + actions);
     var c = $("#ct-cancel", d), pb = $("#ct-pay", d), mv = $("#ct-move", d);
+    if (c || mv) { var pw = document.createElement("div"); pw.innerHTML = "<button type='button' class='bx-ghost' id='ct-push' style='width:100%;margin-top:.8rem'>🔔 Avisarme en este móvil</button><p id='ct-push-msg' class='bx-msg' role='status'></p>"; d.querySelector("#ct-msg").insertAdjacentElement("beforebegin", pw); wirePush($("#ct-push", d), $("#ct-push-msg", d), cita); }
     if (mv) mv.addEventListener("click", function () { openMove(cita, r); });
     if (pb) pb.addEventListener("click", function () {
       pb.disabled = true; msg($("#ct-msg", d), "Abriendo el pago seguro…");

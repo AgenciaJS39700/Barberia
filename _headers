@@ -5,3 +5,14 @@
   Permissions-Policy: camera=(self), microphone=(), geolocation=()
 /img/*
   Cache-Control: public, max-age=604800
+/sw.js
+  Cache-Control: no-cache
+  Service-Worker-Allowed: /
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=86400
+/admin.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=86400
+/icons/*
+  Cache-Control: public, max-age=2592000

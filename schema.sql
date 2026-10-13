@@ -31,3 +31,16 @@ CREATE TABLE rewards (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, 
 CREATE TABLE redemptions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, reward_id INTEGER NOT NULL, reward_name TEXT NOT NULL, cost INTEGER NOT NULL, code TEXT NOT NULL UNIQUE, status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','used')), created_at TEXT NOT NULL DEFAULT (datetime('now')), used_at TEXT);
 CREATE TABLE tryon_log (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, day TEXT NOT NULL);
 CREATE INDEX idx_tryon ON tryon_log(user_id, day);
+-- Avisos push (PWA): móviles del barbero (role='admin') y de clientes con una cita (role='client')
+CREATE TABLE IF NOT EXISTS push_subs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  endpoint TEXT NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('admin','client')),
+  booking_code TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (endpoint, role, booking_code)
+);
+CREATE INDEX IF NOT EXISTS idx_push_booking ON push_subs(booking_code, role);
+CREATE INDEX IF NOT EXISTS idx_push_endpoint ON push_subs(endpoint);

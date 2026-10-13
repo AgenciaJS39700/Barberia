@@ -7,6 +7,12 @@
 <meta name="description" content="Infinity Barber, barbería en Castro Urdiales: cortes, degradados, arreglo de barba y peinados. Calle Victorina Gaínza, 4. Reserva tu cita por WhatsApp o teléfono.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#0F0F10">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Infinity">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F0F10'/%3E%3Cpath d='M16 32c0-7 5-12 11-12 8 0 10 24 21 24 6 0 8-5 8-12s-2-12-8-12c-11 0-13 24-21 24-6 0-11-5-11-12z' fill='none' stroke='%23C9A24B' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Infinity Barber | Barbería en Castro Urdiales">
@@ -233,6 +239,7 @@
 </div>
 <div class="mt-10 flex flex-col items-center justify-between gap-3 border-t border-line pt-6 text-xs text-mute sm:flex-row">
 <p>&copy; <span id="anio"></span> Infinity Barber. Todos los derechos reservados.</p>
+<button type="button" data-install hidden class="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-gold px-5 font-bold text-gold-light hover:bg-gold hover:text-ink">Instalar la app</button>
 <nav aria-label="Legal" class="flex flex-wrap justify-center gap-4"><a href="#aviso-legal" data-legal="aviso" class="hover:text-gold-light">Aviso legal</a><a href="#privacidad" data-legal="privacidad" class="hover:text-gold-light">Privacidad</a><a href="#cookies" data-legal="cookies" class="hover:text-gold-light">Cookies</a></nav>
 </div>
 </div>
@@ -447,5 +454,6 @@ window.open("https://wa.me/" + WA_NUM + "?text=" + encodeURIComponent(txt), "_bl
 })();
 </script>
 <script src="app.js" defer></script>
+<script src="pwa.js" defer></script>
 </body>
 </html>
