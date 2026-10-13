@@ -73,3 +73,8 @@ La web se instala en el móvil como una app (icono propio, pantalla completa, ab
   - No ven ingresos, precios, ajustes, reembolsos ni puntos. Los avisos al móvil son solo de sus citas.
 - Registro de actividad (quién cambió qué) en la pestaña Equipo. Retirar un acceso o desactivar al barbero lo desconecta al instante.
 - Para una base nueva: `schema.sql` ya incluye todo. Para una existente: ejecutar `migrations/004_equipo.sql` una sola vez.
+
+## Semana, bloqueos fijos y lista de espera
+- **Vista Semana** (Agenda → Día/Semana): 7 tarjetas con citas y % de ocupación; toca un día para abrirlo.
+- **Bloqueos fijos** (Semana → «Bloqueos fijos», o «Repetir cada semana» al bloquear horas): se crean los próximos 90 días y el cron los renueva cada hora. Quitar «solo este día» no se vuelve a crear; «toda la serie» los borra. Si ya había citas dentro, no se tocan y se avisa. Cada barbero gestiona los suyos; los del local entero, solo el jefe.
+- **Lista de espera**: si un día está lleno, el cliente deja nombre, teléfono y correo. Al liberarse un hueco (cancelación, bloqueo quitado, pago caducado, cita movida) la web avisa por correo a los 2 primeros por día (cron cada 15 min). Entradas pasadas se limpian solas. Migración: `migrations/005_semana_fijos_espera.sql`.

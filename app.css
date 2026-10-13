@@ -132,3 +132,5 @@ header nav a,header .btn-gold,header [data-account-btn]{white-space:nowrap}
 @media (min-width:768px){.loc-wrap>.bpole.v{display:block}.bpole.h{display:none}}
 .cl-card.cl-in{animation:clin .5s ease both}@keyframes clin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.cl-card.cl-in{animation:none}}
+
+.bx-wait{background:#1a1a1c;border:1px solid #3a3320;border-radius:.9rem;padding:.9rem 1rem;grid-column:1/-1}.bx-wait b{color:#E6C57A}

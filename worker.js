@@ -30,6 +30,7 @@ export default {
       if (path === "/api/reschedule" && request.method === "POST") return await rescheduleBooking(request, env, url, ctx);
       if (path === "/api/stripe/webhook" && request.method === "POST") return await stripeWebhook(request, env, ctx);
       if (path === "/api/cancel" && request.method === "POST") return await cancelBooking(request, env, url, ctx);
+      if (path === "/api/waitlist" && request.method === "POST") return await joinWaitlist(request, env, url);
       if (path === "/api/me" && request.method === "GET") return await me(request, env);
       if (path === "/api/club/redeem" && request.method === "POST") return await redeem(request, env, url);
       if (path === "/api/tryon" && request.method === "POST") return await tryon(request, env, url);
@@ -44,6 +45,9 @@ export default {
   // Cron (cada 15 min): recordatorios de cita por correo
   async scheduled(event, env, ctx) {
     ctx.waitUntil(sendReminders(env).catch((e) => console.error("recordatorios", e && e.message)));
+    ctx.waitUntil(sweepWaitlist(env).catch((e) => console.error("lista de espera", e && e.message)));
+    // Una vez por hora: repone los bloqueos fijos de los próximos 90 días
+    if (nowLocal(env).slice(14, 16) < "15") ctx.waitUntil(materializeRules(env).catch((e) => console.error("bloqueos fijos", e && e.message)));
   },
 };
 
@@ -304,6 +308,7 @@ async function cancelBooking(request, env, url, ctx) {
     if (b.stripe_session) ctx.waitUntil(stripeCall(env, "POST", `/v1/checkout/sessions/${encodeURIComponent(b.stripe_session)}/expire`, {}).catch(() => {}));
   }
   ctx.waitUntil(alertOwner(env, `Cita cancelada: ${b.name} · ${fmtDate(b.start_at)}`, `${b.service_name}. Tel. ${b.phone}`, true, b.barber_id).catch(() => {}));
+  ctx.waitUntil(sweepWaitlist(env).catch(() => {}));
   return json({ ok: true });
 }
 
@@ -617,6 +622,21 @@ async function tryon(request, env, url) {
 
 /* ------------------------------------------------------------------ administración */
 // Rutas que solo puede usar el jefe (los barberos quedan limitados a su trabajo diario)
+// Citas y bloqueos de un rango [from, to). Los barberos ven todo menos el correo del cliente.
+async function agendaRange(env, from, to, owner) {
+  const [bk, bl, br] = await Promise.all([
+    env.DB.prepare(`SELECT b.id, b.code, b.name, b.phone, b.email, b.service_name, b.price_cents, b.start_at, b.end_at, b.status, b.source, b.note, b.user_id, b.pay_status, b.pay_cents, b.barber_id, br.name AS barber,
+      (SELECT COUNT(*) FROM bookings h WHERE h.phone = b.phone AND h.status = 'done') AS visits,
+      (SELECT COUNT(*) FROM bookings h WHERE h.phone = b.phone AND h.status = 'noshow') AS noshows,
+      (SELECT MAX(h.start_at) FROM bookings h WHERE h.phone = b.phone AND h.status = 'done' AND h.start_at < b.start_at) AS last_visit,
+      (SELECT n.note FROM client_notes n WHERE n.phone = b.phone) AS cnote
+      FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.start_at >= ?1 AND b.start_at < ?2 ORDER BY b.start_at`).bind(from + " 00:00", to + " 00:00").all(),
+    env.DB.prepare("SELECT id, barber_id, start_at, end_at, note, rule_id FROM blocks WHERE start_at < ?2 AND end_at > ?1 ORDER BY start_at").bind(from + " 00:00", to + " 00:00").all(),
+    env.DB.prepare("SELECT id, name FROM barbers WHERE active = 1 ORDER BY sort, id").all(),
+  ]);
+  return { bookings: owner ? bk.results : bk.results.map((x) => { const { email, ...rest } = x; return rest; }), blocks: bl.results, barbers: br.results };
+}
+
 const OWNER_ONLY = new Set(["points", "service", "barber", "reward", "hours", "rules", "pay", "refund", "team", "team/key", "team/revoke", "audit", "export"]);
 // Acceso: el jefe entra con ADMIN_TOKEN; cada barbero con su clave personal "<id>.<20 hex>" (solo se guarda su hash)
 async function adminAuth(request, env) {
@@ -674,19 +694,16 @@ async function admin(request, env, url, ctx) {
   }
   if (route === "agenda" && !post) {
     const date = DATE_RE.test(q.get("date") || "") ? q.get("date") : nowLocal(env).slice(0, 10);
-    const [bk, bl, br] = await Promise.all([
-      env.DB.prepare(`SELECT b.id, b.code, b.name, b.phone, b.email, b.service_name, b.price_cents, b.start_at, b.end_at, b.status, b.source, b.note, b.user_id, b.pay_status, b.pay_cents, b.barber_id, br.name AS barber,
-        (SELECT COUNT(*) FROM bookings h WHERE h.phone = b.phone AND h.status = 'done') AS visits,
-        (SELECT COUNT(*) FROM bookings h WHERE h.phone = b.phone AND h.status = 'noshow') AS noshows,
-        (SELECT MAX(h.start_at) FROM bookings h WHERE h.phone = b.phone AND h.status = 'done' AND h.start_at < b.start_at) AS last_visit,
-        (SELECT n.note FROM client_notes n WHERE n.phone = b.phone) AS cnote
-        FROM bookings b JOIN barbers br ON br.id = b.barber_id WHERE b.start_at >= ?1 AND b.start_at < ?2 ORDER BY b.start_at`).bind(date + " 00:00", addDays(date, 1) + " 00:00").all(),
-      env.DB.prepare("SELECT id, barber_id, start_at, end_at, note FROM blocks WHERE start_at < ?2 AND end_at > ?1 ORDER BY start_at").bind(date + " 00:00", addDays(date, 1) + " 00:00").all(),
-      env.DB.prepare("SELECT id, name FROM barbers WHERE active = 1 ORDER BY sort, id").all(),
-    ]);
-    // Los barberos ven la agenda de todos (para cubrirse entre ellos) pero sin el correo ni los datos de pago del cliente
-    const rows = owner ? bk.results : bk.results.map((x) => { const { email, ...rest } = x; return rest; });
-    return json({ date, now: nowLocal(env), bookings: rows, blocks: bl.results, barbers: br.results });
+    const d = await agendaRange(env, date, addDays(date, 1), owner);
+    const wl = await env.DB.prepare("SELECT w.id, w.name, w.phone, w.barber_id, s.name AS service FROM waitlist w JOIN services s ON s.id = w.service_id WHERE w.status = 'open' AND w.day = ?1 ORDER BY w.id").bind(date).all();
+    return json({ date, now: nowLocal(env), bookings: d.bookings, blocks: d.blocks, barbers: d.barbers, waitlist: wl.results });
+  }
+  if (route === "week" && !post) {
+    const base = DATE_RE.test(q.get("date") || "") ? q.get("date") : nowLocal(env).slice(0, 10);
+    const from = addDays(base, -((weekday(base) + 6) % 7)); // lunes de esa semana
+    const d = await agendaRange(env, from, addDays(from, 7), owner);
+    const wl = await env.DB.prepare("SELECT day, COUNT(*) AS n FROM waitlist WHERE status = 'open' AND day >= ?1 AND day < ?2 GROUP BY day").bind(from, addDays(from, 7)).all();
+    return json({ from, now: nowLocal(env), bookings: d.bookings, blocks: d.blocks, barbers: d.barbers, waits: wl.results });
   }
   if (route === "status" && post) {
     const id = Number(body.id), status = String(body.status);
@@ -696,6 +713,7 @@ async function admin(request, env, url, ctx) {
     if (!owner && b.barber_id !== me.barberId) return json({ error: "Esa cita es de otro barbero. Si te toca a ti, pulsa «Quedármela»." }, 403);
     await env.DB.prepare("UPDATE bookings SET status = ?1 WHERE id = ?2").bind(status, id).run();
     await audit(env, me, "estado", `${b.name} · ${b.start_at}: ${b.status} → ${status}`);
+    if (status === "cancelled") ctx.waitUntil(sweepWaitlist(env).catch(() => {}));
     // Puntos del club: se dan una sola vez al marcar la cita como realizada
     if (status === "done" && b.user_id && !b.points_done) {
       const claimed = await env.DB.prepare("UPDATE bookings SET points_done = 1 WHERE id = ?1 AND points_done = 0").bind(id).run();
@@ -736,11 +754,62 @@ async function admin(request, env, url, ctx) {
     return json({ ok: true }, 201);
   }
   if (route === "unblock" && post) {
-    const k = await env.DB.prepare("SELECT id, barber_id FROM blocks WHERE id = ?1").bind(Number(body.id)).first();
+    const k = await env.DB.prepare("SELECT id, barber_id, start_at, rule_id FROM blocks WHERE id = ?1").bind(Number(body.id)).first();
     if (!k) return json({ ok: true });
     if (!owner && k.barber_id !== me.barberId) return json({ error: "Ese bloqueo no es tuyo." }, 403);
-    await env.DB.prepare("DELETE FROM blocks WHERE id = ?1").bind(k.id).run();
-    await audit(env, me, "desbloqueo", `bloqueo #${k.id}`);
+    if (k.rule_id && body.all) {
+      await deleteRule(env, k.rule_id);
+      await audit(env, me, "bloqueo fijo quitado", `regla #${k.rule_id}`);
+    } else {
+      // Quitar solo este día de un bloqueo fijo: se recuerda para que no se vuelva a crear
+      if (k.rule_id) await env.DB.prepare("INSERT OR IGNORE INTO block_skips (rule_id, day) VALUES (?1, ?2)").bind(k.rule_id, k.start_at.slice(0, 10)).run();
+      await env.DB.prepare("DELETE FROM blocks WHERE id = ?1").bind(k.id).run();
+      await audit(env, me, "desbloqueo", `bloqueo #${k.id}`);
+    }
+    ctx.waitUntil(sweepWaitlist(env).catch(() => {}));
+    return json({ ok: true });
+  }
+  if (route === "recurring" && !post) {
+    const { results } = await env.DB.prepare("SELECT r.id, r.barber_id, r.weekdays, r.start_time, r.end_time, r.note, r.from_date, r.until_date, b.name AS barber FROM block_rules r LEFT JOIN barbers b ON b.id = r.barber_id ORDER BY r.id").all();
+    return json({ rules: results });
+  }
+  if (route === "recurring" && post) {
+    const st = String(body.start || ""), en = String(body.end || "");
+    const days = [...new Set((Array.isArray(body.weekdays) ? body.weekdays : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))].sort();
+    const today = nowLocal(env).slice(0, 10);
+    const from = DATE_RE.test(body.from || "") ? body.from : today;
+    const until = DATE_RE.test(body.until || "") ? body.until : null;
+    if (!TIME_RE.test(st) || !TIME_RE.test(en) || en <= st || !days.length) return json({ error: "Elige los días y una hora de inicio y fin válidas." }, 400);
+    if (until && until < from) return json({ error: "La fecha final es anterior a la inicial." }, 400);
+    const cnt = await env.DB.prepare("SELECT COUNT(*) AS n FROM block_rules").first();
+    if (cnt && cnt.n >= 40) return json({ error: "Hay demasiados bloqueos fijos. Quita alguno que ya no uses." }, 409);
+    const who = owner ? (Number(body.barber) || null) : me.barberId;
+    const r = await env.DB.prepare("INSERT INTO block_rules (barber_id, weekdays, start_time, end_time, note, from_date, until_date, created_by) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)")
+      .bind(who, days.join(","), st, en, cleanName(body.note).slice(0, 80), from, until, me.name || "").run();
+    const id = r.meta.last_row_id;
+    const created = await materializeRules(env, id);
+    // Citas ya reservadas que caen dentro del bloqueo: no se tocan, pero se avisa de ellas
+    const conf = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM bookings b JOIN blocks k ON k.rule_id = ?1 WHERE b.status = 'booked' AND (k.barber_id IS NULL OR k.barber_id = b.barber_id) AND b.start_at < k.end_at AND b.end_at > k.start_at`).bind(id).first();
+    await audit(env, me, "bloqueo fijo", `${days.join(",")} ${st}-${en}${body.note ? " · " + cleanName(body.note).slice(0, 40) : ""}`);
+    return json({ ok: true, id, created, conflicts: conf ? conf.n : 0 }, 201);
+  }
+  if (route === "recurring/del" && post) {
+    const r = await env.DB.prepare("SELECT id, barber_id FROM block_rules WHERE id = ?1").bind(Number(body.id)).first();
+    if (!r) return json({ ok: true });
+    if (!owner && r.barber_id !== me.barberId) return json({ error: "Ese bloqueo fijo no es tuyo." }, 403);
+    await deleteRule(env, r.id);
+    await audit(env, me, "bloqueo fijo quitado", `regla #${r.id}`);
+    ctx.waitUntil(sweepWaitlist(env).catch(() => {}));
+    return json({ ok: true });
+  }
+  if (route === "waitlist" && !post) {
+    const today = nowLocal(env).slice(0, 10);
+    const { results } = await env.DB.prepare("SELECT w.id, w.name, w.phone, w.barber_id, w.day, w.created_at, s.name AS service FROM waitlist w JOIN services s ON s.id = w.service_id WHERE w.status = 'open' AND w.day >= ?1 ORDER BY w.day, w.id LIMIT 200").bind(today).all();
+    return json({ items: results });
+  }
+  if (route === "waitlist/del" && post) {
+    await env.DB.prepare("UPDATE waitlist SET status = 'removed' WHERE id = ?1").bind(Number(body.id)).run();
     return json({ ok: true });
   }
   if (route === "clients" && !post) {
@@ -903,6 +972,7 @@ async function admin(request, env, url, ctx) {
       if (b.email) jobs.push(mailBooked(env, info, publicOrigin(env, request), "Cita cambiada"));
       jobs.push(pushBooking(env, b.code, "Tu cita ha cambiado", `Nueva hora: ${fmtDate(toStart)}`));
     }
+    jobs.push(sweepWaitlist(env));
     ctx.waitUntil(Promise.allSettled(jobs));
     return json({ ok: true });
   }
@@ -953,6 +1023,86 @@ async function admin(request, env, url, ctx) {
     return new Response("\ufeff" + [head, ...rows].map((r) => r.map(CSV_CELL).join(";")).join("\r\n"), { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="citas-${from}-a-${to}.csv"`, "cache-control": "no-store" } });
   }
   return json({ error: "No encontrado" }, 404);
+}
+
+/* ------------------------------------------------------------------ bloqueos fijos */
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const RULE_HORIZON_DAYS = 90;
+// Crea (sin duplicar) los bloqueos de los próximos 90 días. No recrea los días que se quitaron a mano (block_skips).
+async function materializeRules(env, onlyId = 0) {
+  const today = nowLocal(env).slice(0, 10), horizon = addDays(today, RULE_HORIZON_DAYS);
+  const rs = (await env.DB.prepare("SELECT * FROM block_rules" + (onlyId ? " WHERE id = ?1" : "")).bind(...(onlyId ? [onlyId] : [])).all()).results;
+  const stmts = [];
+  for (const r of rs) {
+    const days = String(r.weekdays).split(",").map(Number);
+    for (let d = r.from_date > today ? r.from_date : today; d <= horizon && (!r.until_date || d <= r.until_date); d = addDays(d, 1)) {
+      if (!days.includes(weekday(d))) continue;
+      stmts.push(env.DB.prepare("INSERT OR IGNORE INTO blocks (barber_id, start_at, end_at, note, rule_id) SELECT ?1, ?2, ?3, ?4, ?5 WHERE NOT EXISTS (SELECT 1 FROM block_skips WHERE rule_id = ?5 AND day = ?6)")
+        .bind(r.barber_id, d + " " + r.start_time, d + " " + r.end_time, r.note, r.id, d));
+    }
+  }
+  for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
+  return stmts.length;
+}
+async function deleteRule(env, id) {
+  const today = nowLocal(env).slice(0, 10) + " 00:00";
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM blocks WHERE rule_id = ?1 AND start_at >= ?2").bind(id, today),
+    env.DB.prepare("DELETE FROM block_skips WHERE rule_id = ?1").bind(id),
+    env.DB.prepare("DELETE FROM block_rules WHERE id = ?1").bind(id),
+  ]);
+}
+
+/* ------------------------------------------------------------------ lista de espera */
+// Un cliente se apunta a un día sin huecos; cuando se libera uno (cancelación, bloqueo quitado, pago caducado) se le avisa por correo.
+async function joinWaitlist(request, env, url) {
+  if (!sameOrigin(request, url)) return json({ error: "Origen no permitido." }, 403);
+  const ip = request.headers.get("cf-connecting-ip") || "0.0.0.0";
+  if (await tooMany(env, [`wl:ip:${ip}`], 8)) return TOO_MANY();
+  await hit(env, [`wl:ip:${ip}`]);
+  const body = await getJson(request);
+  const name = cleanName(body.name), phone = cleanPhone(body.phone), email = cleanEmail(body.email);
+  const day = String(body.day || ""), serviceId = Number(body.service), barberId = Number(body.barber) || 0;
+  if (!name || !phone || !EMAIL_RE.test(email) || !DATE_RE.test(day) || !Number.isInteger(serviceId)) return json({ error: "Faltan datos: nombre, teléfono y correo (te avisamos por correo)." }, 400);
+  const r = await rules(env);
+  const today = nowLocal(env).slice(0, 10);
+  if (day < today || day > addDays(today, r.maxDays)) return json({ error: "Ese día no está disponible." }, 400);
+  const service = await env.DB.prepare("SELECT id, minutes FROM services WHERE id = ?1 AND active = 1").bind(serviceId).first();
+  if (!service) return json({ error: "Servicio no encontrado." }, 404);
+  if (barberId && !(await env.DB.prepare("SELECT id FROM barbers WHERE id = ?1 AND active = 1").bind(barberId).first())) return json({ error: "Barbero no válido." }, 400);
+  if ((await freeSlots(env, day, service, barberId)).length) return json({ error: "Ese día sí hay huecos libres. ¡Reserva directamente!", free: true }, 409);
+  const dup = await env.DB.prepare("SELECT id FROM waitlist WHERE status = 'open' AND day = ?1 AND service_id = ?2 AND (phone = ?3 OR email = ?4)").bind(day, serviceId, phone, email).first();
+  if (dup) return json({ ok: true, already: true });
+  const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM waitlist WHERE status = 'open' AND (phone = ?1 OR email = ?2)").bind(phone, email).first();
+  if (n && n.n >= 5) return json({ error: "Ya estás en varias listas de espera. Espera a que te avisemos." }, 409);
+  await env.DB.prepare("INSERT INTO waitlist (name, phone, email, service_id, barber_id, day, created_at) VALUES (?1,?2,?3,?4,?5,?6,?7)").bind(name, phone, email, serviceId, barberId, day, nowLocal(env)).run();
+  return json({ ok: true }, 201);
+}
+// Revisa la lista: si ya hay hueco para alguien, le avisa (máx. 2 personas por día y pasada, por orden de llegada).
+async function sweepWaitlist(env) {
+  const today = nowLocal(env).slice(0, 10);
+  await env.DB.prepare("UPDATE waitlist SET status = 'removed' WHERE status = 'open' AND day < ?1").bind(today).run();
+  const open = (await env.DB.prepare("SELECT w.id, w.name, w.email, w.day, w.service_id, w.barber_id, s.minutes, s.name AS service_name FROM waitlist w JOIN services s ON s.id = w.service_id WHERE w.status = 'open' AND w.day >= ?1 ORDER BY w.id LIMIT 100").bind(today).all()).results;
+  const cache = new Map(), perDay = new Map();
+  let sent = 0;
+  for (const w of open) {
+    if ((perDay.get(w.day) || 0) >= 2) continue;
+    const key = `${w.day}|${w.service_id}|${w.barber_id}`;
+    if (!cache.has(key)) cache.set(key, await freeSlots(env, w.day, { id: w.service_id, minutes: w.minutes }, w.barber_id));
+    const slots = cache.get(key);
+    if (!slots.length) continue;
+    const claimed = await env.DB.prepare("UPDATE waitlist SET status = 'notified', notified_at = ?1 WHERE id = ?2 AND status = 'open'").bind(nowLocal(env), w.id).run();
+    if (!claimed.meta.changes) continue;
+    perDay.set(w.day, (perDay.get(w.day) || 0) + 1);
+    sent++;
+    await mailWaitlist(env, w, slots.slice(0, 6).map((x) => x.time));
+  }
+  return sent;
+}
+function mailWaitlist(env, w, times) {
+  const when = fmtDate(w.day + " 00:00").replace(/ a las .*$/, "");
+  const inner = `<p style="font-size:15px;line-height:1.6">Hola ${escHtml(w.name.split(" ")[0])}, se ha liberado un hueco para <b>${escHtml(w.service_name)}</b> el <b>${escHtml(when)}</b>: ${times.map((t) => `<b>${escHtml(t)}</b>`).join(", ")}.</p><p style="font-size:14px;line-height:1.6">Se lo damos a quien reserve primero, así que no tardes.</p>`;
+  return sendMail(env, w.email, w.name, `Hueco libre el ${when}`, layout(env, "¡Se ha liberado un hueco!", inner, env.SITE_URL ? { text: "Reservar ahora", url: env.SITE_URL } : undefined));
 }
 
 /* ------------------------------------------------------------------ pagos (Stripe Checkout) */

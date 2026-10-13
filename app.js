@@ -112,7 +112,7 @@ function loadSlots() {
   api("GET", "/api/availability?date=" + date + "&service=" + svc + "&barber=" + bar).then(function (r) {
     if (date !== S.date || svc !== S.service || bar !== S.barber) return;
     S.slots = r.slots || [];
-    if (!S.slots.length) { msg(m, "No quedan huecos ese día. Prueba otro día o escríbenos por WhatsApp."); return; }
+    if (!S.slots.length) { msg(m, "No quedan huecos ese día. Prueba otro día, o apúntate a la lista de espera y te avisamos por correo si se libera uno."); waitForm(box, date, svc, bar); return; }
     msg(m, "");
     box.innerHTML = S.slots.map(function (s) { return '<button type="button" class="bx-chip" data-t="' + s.time + '" aria-pressed="' + (S.time === s.time) + '">' + s.time + "</button>"; }).join("");
     box.querySelectorAll("[data-t]").forEach(function (b) {
@@ -124,6 +124,29 @@ function loadSlots() {
       });
     });
   }).catch(function (e) { msg(m, e.message || "No se pudieron cargar los huecos.", "err"); });
+}
+
+// Lista de espera: si el día está lleno, el cliente deja sus datos y la web le escribe cuando se libera un hueco
+function waitForm(box, day, svc, bar) {
+  var u = USER || {};
+  box.innerHTML = "<form id='wl-f' class='bx-wait' novalidate><b>Avísame si se libera un hueco</b>" +
+    "<label class='bx-lab' for='wl-name'>Nombre</label><input id='wl-name' class='bx-in' autocomplete='given-name' maxlength='60' value='" + esc(u.name || "") + "'>" +
+    "<label class='bx-lab' for='wl-phone'>Teléfono</label><input id='wl-phone' class='bx-in' type='tel' inputmode='tel' autocomplete='tel' maxlength='20' value='" + esc(u.phone || "") + "'>" +
+    "<label class='bx-lab' for='wl-email'>Correo <span class='bx-small'>(te avisamos aquí)</span></label><input id='wl-email' class='bx-in' type='email' autocomplete='email' maxlength='120' value='" + esc(u.email || "") + "'>" +
+    "<p id='wl-m' class='bx-msg' role='status'></p><button class='bx-ghost' style='width:100%'>Apuntarme a la lista de espera</button></form>";
+  var f = $("#wl-f", box), m = $("#wl-m", box);
+  f.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var body = { name: $("#wl-name", f).value.trim(), phone: $("#wl-phone", f).value.trim(), email: $("#wl-email", f).value.trim(), day: day, service: svc, barber: bar || 0 };
+    if (!body.name || !body.phone || !body.email) { msg(m, "Rellena nombre, teléfono y correo.", "err"); return; }
+    msg(m, "Apuntándote…");
+    api("POST", "/api/waitlist", body).then(function () {
+      f.innerHTML = "<b>¡Listo, estás en la lista!</b><p class='bx-small'>Si alguien cancela, te escribimos al correo con los huecos. Se los damos al primero que reserve.</p>";
+    }).catch(function (e2) {
+      msg(m, e2.message, "err");
+      if (e2.message && /hay huecos libres/.test(e2.message)) loadSlots();
+    });
+  });
 }
 
 function updateSummary() {

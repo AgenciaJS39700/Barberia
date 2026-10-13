@@ -14,7 +14,7 @@
   };
   var madridDay = function () { return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid" }).format(new Date()); };
   var TOKEN = "", ME = null, CAT = null, TAB = "agenda", DATE = madridDay(), LAST = null, TIMER = 0;
-  var VIEW = store.get("bbview") || "line", FILT = store.get("bbfilt") || "";
+  var VIEW = store.get("bbview") || "line", FILT = store.get("bbfilt") || "", SPAN = store.get("bbspan") === "week" ? "week" : "day";
 
   /* ---------- utilidades ---------- */
   function api(m, p, b) {
@@ -81,6 +81,11 @@
   /* ---------- AGENDA ---------- */
   function visibleBarbers(a) { return FILT && FILT !== "all" ? a.barbers.filter(function (b) { return String(b.id) === FILT; }) : a.barbers; }
   function agenda(v) {
+    if (SPAN === "week") return Promise.all([api("GET", "week?date=" + DATE), catalog()]).then(function (r) {
+      if (!FILT) FILT = isOwner() ? "all" : String(ME.barberId);
+      if (FILT !== "all" && !r[0].barbers.some(function (b) { return String(b.id) === FILT; })) FILT = "all";
+      LAST = r[0]; drawWeek(v, r[0], r[1]);
+    });
     return Promise.all([api("GET", "agenda?date=" + DATE), catalog()]).then(function (r) {
       LAST = r[0];
       if (!FILT) FILT = isOwner() ? "all" : String(ME.barberId);
@@ -101,12 +106,13 @@
       var me = ME.barberId === b.id; return "<button type='button' class='bx-chip' data-f='" + b.id + "' aria-pressed='" + (String(b.id) === FILT) + "'>" + esc(b.name) + (me ? " (yo)" : "") + "</button>";
     }).join("");
     var head = "<div class='ag-head'><div class='ag-nav'><button class='bx-ghost' id='pv' aria-label='Día anterior'>←</button><input id='dt' type='date' class='bx-in' value='" + DATE + "' aria-label='Día'><button class='bx-ghost' id='nx' aria-label='Día siguiente'>→</button><button class='bx-ghost' id='td'>Hoy</button></div>" +
-      "<div class='ag-day'><b>" + esc(longDate(DATE)) + "</b>" + (isToday ? " · hoy" : "") + "</div>" +
+      "<div class='ag-day'>" + spanToggle() + "<b>" + esc(longDate(DATE)) + "</b>" + (isToday ? " · hoy" : "") + "</div>" +
       "<div class='ag-sum'><span><b>" + live.length + "</b> citas</span><span><b>" + done + "</b> hechas</span><span><b>" + pending + "</b> por hacer</span>" +
       (next ? "<span class='ag-next'>Próxima: <b>" + esc(next.start_at.slice(11)) + "</b> " + esc(next.name) + " <small>(en " + relMin(stamp(next.start_at) - stamp(a.now)) + ")</small></span>" : "") + "</div></div>" +
       "<div class='ag-tools'><div class='ag-chips' role='group' aria-label='Barbero'>" + chips + "</div><div class='ag-btns'><button class='bx-btn' id='nw'>＋ Nueva cita</button><button class='bx-ghost' id='bk'>Bloquear horas</button>" +
       "<button class='bx-ghost' id='vw' aria-pressed='" + (VIEW === "list") + "'>" + (VIEW === "list" ? "▦ Horas" : "☰ Lista") + "</button></div></div>";
-    v.innerHTML = head + (VIEW === "list" ? listView(mine, a) : timeline(a, c, bars, mine)) + "<p class='bx-small ag-foot'>Toca una cita para ver al cliente, llamarle, moverla o marcarla. Toca un hueco libre para crear una cita ahí.</p>";
+    var wl = (a.waitlist || []).length ? "<button type='button' class='ag-wait' id='wl'>⏳ " + a.waitlist.length + (a.waitlist.length === 1 ? " persona espera" : " personas esperan") + " hueco este día · ver</button>" : "";
+    v.innerHTML = head + wl + (VIEW === "list" ? listView(mine, a) : timeline(a, c, bars, mine)) + "<p class='bx-small ag-foot'>Toca una cita para ver al cliente, llamarle, moverla o marcarla. Toca un hueco libre para crear una cita ahí.</p>";
     wireAgenda(v, a, c);
   }
   function relMin(m) { m = Math.max(0, Math.round(m)); return m < 60 ? m + " min" : Math.floor(m / 60) + " h " + (m % 60 ? (m % 60) + " min" : ""); }
@@ -155,6 +161,7 @@
     $$("[data-f]", v).forEach(function (b) { b.onclick = function () { FILT = b.dataset.f; store.ses("bbfilt", FILT); store.loc("bbfilt", FILT); draw(v, a, c); }; });
     $("#vw").onclick = function () { VIEW = VIEW === "list" ? "line" : "list"; store.loc("bbview", VIEW); draw(v, a, c); };
     $("#nw").onclick = function () { newBooking(a, c, {}); }; $("#bk").onclick = function () { newBlock(a, c); };
+    wireSpan(v); var wl = $("#wl", v); if (wl) wl.onclick = function () { waitSheet(a.waitlist, a); };
     $$("[data-b]", v).forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); var bk = a.bookings.filter(function (x) { return x.id === Number(b.dataset.b); })[0]; if (bk) detail(bk, a, c); }; });
     $$("[data-k]", v).forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); var k = a.blocks.filter(function (x) { return x.id === Number(b.dataset.k); })[0]; if (k) blockInfo(k, a); }; });
     $$(".tl-col", v).forEach(function (col) {
@@ -177,6 +184,75 @@
         if (target != null) tl.scrollTop = Math.max(0, target - 20);
       }
     }
+  }
+
+  /* ---- Día / Semana ---- */
+  function spanToggle() {
+    return "<span class='seg' role='group' aria-label='Vista'><button type='button' data-span='day' aria-pressed='" + (SPAN === "day") + "'>Día</button><button type='button' data-span='week' aria-pressed='" + (SPAN === "week") + "'>Semana</button></span> ";
+  }
+  function wireSpan(v) {
+    $$("[data-span]", v).forEach(function (b) { b.onclick = function () { SPAN = b.dataset.span; store.loc("bbspan", SPAN); show(); }; });
+  }
+  function drawWeek(v, w, c) {
+    var days = []; for (var i = 0; i < 7; i++) days.push(addDays(w.from, i));
+    var today = w.now.slice(0, 10), bars = visibleBarbers(w), ids = bars.map(function (b) { return b.id; });
+    var chips = "<button type='button' class='bx-chip' data-f='all' aria-pressed='" + (FILT === "all") + "'>Todos</button>" + w.barbers.map(function (b) {
+      return "<button type='button' class='bx-chip' data-f='" + b.id + "' aria-pressed='" + (String(b.id) === FILT) + "'>" + esc(b.name) + (ME.barberId === b.id ? " (yo)" : "") + "</button>";
+    }).join("");
+    var waits = {}; (w.waits || []).forEach(function (x) { waits[x.day] = x.n; });
+    var head = "<div class='ag-head'><div class='ag-nav'><button class='bx-ghost' id='pv' aria-label='Semana anterior'>←</button><span class='ag-range'>" + esc(longDate(days[0])) + " – " + esc(longDate(days[6])) + "</span><button class='bx-ghost' id='nx' aria-label='Semana siguiente'>→</button><button class='bx-ghost' id='td'>Hoy</button></div>" +
+      "<div class='ag-day'>" + spanToggle() + "</div></div>" +
+      "<div class='ag-tools'><div class='ag-chips' role='group' aria-label='Barbero'>" + chips + "</div><div class='ag-btns'><button class='bx-ghost' id='fx'>Bloqueos fijos</button></div></div>";
+    var cards = days.map(function (d) {
+      var wd = new Date(d + "T00:00:00Z").getUTCDay(), wins = c.hours[wd] || [];
+      var total = 0; wins.forEach(function (x) { total += toMin(x[1]) - toMin(x[0]); });
+      var cap = total * bars.length;
+      var bk = w.bookings.filter(function (b) { return b.start_at.slice(0, 10) === d && b.status !== "cancelled" && ids.indexOf(b.barber_id) >= 0; });
+      var busy = 0; bk.forEach(function (b) { busy += toMin(b.end_at.slice(11)) - toMin(b.start_at.slice(11)); });
+      w.blocks.forEach(function (k) { if (k.start_at.slice(0, 10) !== d) return; bars.forEach(function (br) { if (k.barber_id == null || k.barber_id === br.id) busy += Math.max(0, toMin(k.end_at.slice(11)) - toMin(k.start_at.slice(11))); }); });
+      var pct = cap ? Math.min(100, Math.round(busy * 100 / cap)) : 0, pend = bk.filter(function (b) { return b.status === "booked"; });
+      var first = pend.slice(0, 3).map(function (b) { return esc(b.start_at.slice(11)) + " " + esc(b.name.split(" ")[0]); }).join(" · ");
+      var closed = !wins.length;
+      return "<button type='button' class='wk-day" + (d === today ? " today" : "") + (closed ? " closed" : "") + "' data-day='" + d + "' aria-label='" + esc(longDate(d)) + ": " + bk.length + " citas'>" +
+        "<div class='wk-top'><b>" + esc(DAYS[wd].slice(0, 3)) + " " + Number(d.slice(8)) + "</b>" + (d === today ? "<span class='tag'>hoy</span>" : "") + (waits[d] ? "<span class='tag noshow'>⏳ " + waits[d] + "</span>" : "") + "</div>" +
+        (closed ? "<small>Cerrado</small>" : "<div class='wk-bar' aria-hidden='true'><i style='width:" + pct + "%' class='" + (pct >= 85 ? "full" : "") + "'></i></div><small>" + bk.length + (bk.length === 1 ? " cita" : " citas") + " · " + pct + "% ocupado" + (pend.length && d >= today ? " · " + pend.length + " por hacer" : "") + "</small>" + (first ? "<small class='wk-first'>" + first + (pend.length > 3 ? " …" : "") + "</small>" : "")) + "</button>";
+    }).join("");
+    v.innerHTML = head + "<div class='wk'>" + cards + "</div><p class='bx-small ag-foot'>Toca un día para ver sus horas. La barra muestra lo ocupado (citas y bloqueos) sobre el horario del local.</p>";
+    var go = function (d) { DATE = d; show(); };
+    $("#pv").onclick = function () { go(addDays(w.from, -7)); }; $("#nx").onclick = function () { go(addDays(w.from, 7)); }; $("#td").onclick = function () { go(madridDay()); };
+    $$("[data-f]", v).forEach(function (b) { b.onclick = function () { FILT = b.dataset.f; store.ses("bbfilt", FILT); store.loc("bbfilt", FILT); drawWeek(v, w, c); }; });
+    $$("[data-day]", v).forEach(function (b) { b.onclick = function () { DATE = b.dataset.day; SPAN = "day"; store.loc("bbspan", "day"); show(); }; });
+    $("#fx").onclick = function () { fixedSheet(w); };
+    wireSpan(v);
+  }
+
+  /* ---- bloqueos fijos ---- */
+  var WD = [["1", "L"], ["2", "M"], ["3", "X"], ["4", "J"], ["5", "V"], ["6", "S"], ["0", "D"]];
+  function fixedSheet(a) {
+    api("GET", "recurring").then(function (r) {
+      var rows = r.rules.length ? r.rules.map(function (x) {
+        var days = x.weekdays.split(",").map(function (n) { return DAYS[Number(n)].slice(0, 3); }).join(", "), can = isOwner() || x.barber_id === ME.barberId;
+        return "<div class='item'><div><b>" + esc(x.note || "Bloqueado") + "</b><small>" + esc(days) + " · " + esc(x.start_time) + "–" + esc(x.end_time) + " · " + esc(x.barber || "Todo el local") + (x.until_date ? " · hasta " + esc(x.until_date) : "") + "</small></div>" + (can ? "<button class='bx-ghost' data-del='" + x.id + "'>Quitar</button>" : "") + "</div>";
+      }).join("") : "<p class='bx-small'>Aún no hay bloqueos fijos. Úsalos para la comida, el día libre semanal, etc.</p>";
+      sheet("<h3 class='sh-t'>Bloqueos fijos</h3><p class='bx-small'>Se repiten solos cada semana, sin tener que bloquear día a día.</p>" + rows + "<div class='acts' style='margin-top:.8rem'><button class='bx-btn' id='fn'>＋ Nuevo bloqueo fijo</button><button class='bx-ghost' id='sx'>Cerrar</button></div><p id='sm' class='bx-msg' role='status'></p>", function (d) {
+        $("#sx", d).onclick = function () { d.close(); };
+        $("#fn", d).onclick = function () { d.close(); newBlock(a, null, true); };
+        $$("[data-del]", d).forEach(function (b) { b.onclick = function () { if (!confirm("¿Quitar este bloqueo fijo? Se liberan todos sus días futuros.")) return; api("POST", "recurring/del", { id: Number(b.dataset.del) }).then(function () { d.close(); toast("Bloqueo fijo quitado."); show(); }).catch(function (e) { $("#sm", d).className = "bx-msg err"; $("#sm", d).textContent = e.message; }); }; });
+      });
+    }).catch(function (e) { toast(e.message, true); });
+  }
+
+  /* ---- lista de espera ---- */
+  function waitSheet(items, a) {
+    var rows = items.map(function (w) {
+      var bn = w.barber_id ? ((a.barbers.filter(function (b) { return b.id === w.barber_id; })[0] || {}).name || "") : "";
+      return "<div class='item'><div><b>" + esc(w.name) + "</b><small>" + esc(w.service) + (bn ? " · con " + esc(bn) : " · cualquier barbero") + " · " + esc(w.phone) + "</small></div>" +
+        "<div class='acts'><a class='bx-ghost' href='tel:" + esc(w.phone) + "' aria-label='Llamar'>📞</a><a class='bx-ghost' href='" + esc(waLink(w.phone, "Hola " + w.name.split(" ")[0] + ", se ha liberado un hueco en la barbería. ¿Te viene bien?")) + "' target='_blank' rel='noopener' aria-label='WhatsApp'>💬</a><button class='bx-ghost' data-rm='" + w.id + "'>Quitar</button></div></div>";
+    }).join("") || "<p class='bx-small'>Nadie espera.</p>";
+    sheet("<h3 class='sh-t'>Lista de espera</h3><p class='bx-small'>Clientes que querían este día y estaba lleno. Si se libera un hueco, la web avisa sola por correo a los dos primeros; tú también puedes llamarles.</p>" + rows + "<p id='sm' class='bx-msg' role='status'></p><button class='bx-ghost' id='sx' style='width:100%;margin-top:.4rem'>Cerrar</button>", function (d) {
+      $("#sx", d).onclick = function () { d.close(); };
+      $$("[data-rm]", d).forEach(function (b) { b.onclick = function () { api("POST", "waitlist/del", { id: Number(b.dataset.rm) }).then(function () { d.close(); show(); }).catch(function (e) { $("#sm", d).className = "bx-msg err"; $("#sm", d).textContent = e.message; }); }; });
+    });
   }
 
   /* ---- detalle de una cita ---- */
@@ -233,24 +309,40 @@
       $("#nn", d).focus();
     });
   }
-  function newBlock(a, c) {
-    var html = "<h3 class='sh-t'>Bloquear horas</h3><p class='bx-small'>Nadie podrá reservar ese rato (descanso, médico, vacaciones…).</p>" +
+  function wdPicker(on) {
+    return "<p class='bx-lab'>Días de la semana</p><div class='wdays' role='group' aria-label='Días'>" + WD.map(function (x) { return "<button type='button' class='bx-chip' data-wd='" + x[0] + "' aria-pressed='" + (x[0] === on) + "'>" + x[1] + "</button>"; }).join("") + "</div><label class='bx-lab' for='bu'>Hasta (opcional)</label><input id='bu' class='bx-in' type='date'>";
+  }
+  function newBlock(a, c, repeat) {
+    var wdOn = String(new Date(DATE + "T00:00:00Z").getUTCDay());
+    var html = "<h3 class='sh-t'>" + (repeat ? "Bloqueo fijo semanal" : "Bloquear horas") + "</h3><p class='bx-small'>" + (repeat ? "Se repite solo cada semana (se crean los próximos 3 meses y se va renovando)." : "Nadie podrá reservar ese rato (descanso, médico, vacaciones…).") + "</p>" +
       "<div class='row'><div><label class='bx-lab' for='bf'>Desde</label><input id='bf' class='bx-in' type='time' step='300'></div><div><label class='bx-lab' for='bt'>Hasta</label><input id='bt' class='bx-in' type='time' step='300'></div></div>" +
       (isOwner() ? "<label class='bx-lab' for='bb'>Barbero</label><select id='bb' class='bx-in'><option value=''>Todos</option>" + a.barbers.map(function (b) { return "<option value='" + b.id + "'>" + esc(b.name) + "</option>"; }).join("") + "</select>" : "") +
-      "<label class='bx-lab' for='bn'>Motivo</label><input id='bn' class='bx-in' maxlength='60' placeholder='Médico, comida, vacaciones…'><p id='sm' class='bx-msg' role='status'></p><div class='acts'><button class='bx-btn' id='bok'>Bloquear</button><button class='bx-ghost' id='sx'>Cancelar</button></div>";
+      "<label class='bx-lab' for='bn'>Motivo</label><input id='bn' class='bx-in' maxlength='60' placeholder='Médico, comida, vacaciones…'>" +
+      (repeat ? wdPicker(wdOn) : "<label class='bx-chk'><input type='checkbox' id='br'> Repetir cada semana</label><div id='brw' hidden>" + wdPicker(wdOn) + "</div>") +
+      "<p id='sm' class='bx-msg' role='status'></p><div class='acts'><button class='bx-btn' id='bok'>" + (repeat ? "Crear bloqueo fijo" : "Bloquear") + "</button><button class='bx-ghost' id='sx'>Cancelar</button></div>";
     sheet(html, function (d) {
+      var rpt = !!repeat;
       $("#sx", d).onclick = function () { d.close(); };
+      $$("[data-wd]", d).forEach(function (b) { b.onclick = function () { b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); }; });
+      var br = $("#br", d); if (br) br.onchange = function () { rpt = br.checked; $("#brw", d).hidden = !rpt; };
       $("#bok", d).onclick = function () {
         var m = $("#sm", d); if (!$("#bf", d).value || !$("#bt", d).value) { m.className = "bx-msg err"; m.textContent = "Indica desde y hasta."; return; }
-        api("POST", "block", { start: DATE + " " + $("#bf", d).value, end: DATE + " " + $("#bt", d).value, barber: isOwner() ? (Number($("#bb", d).value) || null) : undefined, note: $("#bn", d).value })
-          .then(function () { d.close(); toast("Horas bloqueadas."); show(); }).catch(function (e) { m.className = "bx-msg err"; m.textContent = e.message; });
+        var barber = isOwner() ? (Number($("#bb", d).value) || null) : undefined, note = $("#bn", d).value, p;
+        if (rpt) {
+          var wds = $$("[data-wd]", d).filter(function (b) { return b.getAttribute("aria-pressed") === "true"; }).map(function (b) { return Number(b.dataset.wd); });
+          if (!wds.length) { m.className = "bx-msg err"; m.textContent = "Elige al menos un día de la semana."; return; }
+          p = api("POST", "recurring", { weekdays: wds, start: $("#bf", d).value, end: $("#bt", d).value, barber: barber || 0, note: note, from: DATE, until: $("#bu", d).value || undefined });
+        } else p = api("POST", "block", { start: DATE + " " + $("#bf", d).value, end: DATE + " " + $("#bt", d).value, barber: barber, note: note });
+        p.then(function (r) { d.close(); toast(rpt ? "Bloqueo fijo creado." + (r.conflicts ? " Ojo: " + r.conflicts + (r.conflicts === 1 ? " cita ya reservada cae" : " citas ya reservadas caen") + " dentro; no se han tocado." : "") : "Horas bloqueadas."); show(); })
+          .catch(function (e) { m.className = "bx-msg err"; m.textContent = e.message; });
       };
     });
   }
   function blockInfo(k, a) {
     var who = k.barber_id == null ? "Todos los barberos" : (a.barbers.filter(function (b) { return b.id === k.barber_id; })[0] || { name: "Barbero" }).name, can = isOwner() || k.barber_id === ME.barberId;
-    sheet("<h3 class='sh-t'>⛔ " + esc(k.note || "Bloqueado") + "</h3><p class='sh-l'>" + esc(k.start_at.slice(11)) + " → " + esc(k.end_at.slice(11)) + " · " + esc(who) + "</p><p id='sm' class='bx-msg' role='status'></p><div class='acts'>" + (can ? "<button class='bx-btn' id='ub'>Quitar bloqueo</button>" : "") + "<button class='bx-ghost' id='sx'>Cerrar</button></div>", function (d) {
+    sheet("<h3 class='sh-t'>⛔ " + esc(k.note || "Bloqueado") + "</h3><p class='sh-l'>" + esc(k.start_at.slice(11)) + " → " + esc(k.end_at.slice(11)) + " · " + esc(who) + (k.rule_id ? " · se repite cada semana" : "") + "</p><p id='sm' class='bx-msg' role='status'></p><div class='acts'>" + (can ? "<button class='bx-btn' id='ub'>" + (k.rule_id ? "Quitar solo este día" : "Quitar bloqueo") + "</button>" + (k.rule_id ? "<button class='bx-ghost' id='ua'>Quitar toda la serie</button>" : "") : "") + "<button class='bx-ghost' id='sx'>Cerrar</button></div>", function (d) {
       $("#sx", d).onclick = function () { d.close(); };
+      var ua = $("#ua", d); if (ua) ua.onclick = function () { if (!confirm("¿Quitar este bloqueo fijo de todos los días futuros?")) return; api("POST", "unblock", { id: k.id, all: true }).then(function () { d.close(); show(); }).catch(function (e) { $("#sm", d).className = "bx-msg err"; $("#sm", d).textContent = e.message; }); };
       var u = $("#ub", d); if (u) u.onclick = function () { api("POST", "unblock", { id: k.id }).then(function () { d.close(); show(); }).catch(function (e) { $("#sm", d).className = "bx-msg err"; $("#sm", d).textContent = e.message; }); };
     });
   }

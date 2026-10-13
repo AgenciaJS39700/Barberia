@@ -23,7 +23,8 @@ CREATE TABLE bookings (
 CREATE INDEX idx_bk_day ON bookings(barber_id, start_at);
 CREATE INDEX idx_bk_user ON bookings(user_id, start_at);
 CREATE INDEX idx_bk_status ON bookings(status, start_at);
-CREATE TABLE blocks (id INTEGER PRIMARY KEY AUTOINCREMENT, barber_id INTEGER, start_at TEXT NOT NULL, end_at TEXT NOT NULL, note TEXT);
+CREATE TABLE blocks (id INTEGER PRIMARY KEY AUTOINCREMENT, barber_id INTEGER, start_at TEXT NOT NULL, end_at TEXT NOT NULL, note TEXT, rule_id INTEGER);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_blocks_rule ON blocks(rule_id, start_at) WHERE rule_id IS NOT NULL;
 CREATE INDEX idx_blocks ON blocks(start_at);
 CREATE TABLE points (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, delta INTEGER NOT NULL, reason TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')));
 CREATE INDEX idx_points_user ON points(user_id);
@@ -51,3 +52,32 @@ CREATE TABLE IF NOT EXISTS staff (barber_id INTEGER PRIMARY KEY REFERENCES barbe
 CREATE TABLE IF NOT EXISTS client_notes (phone TEXT PRIMARY KEY, note TEXT NOT NULL, updated_by TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '');
 CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, actor TEXT NOT NULL, action TEXT NOT NULL, detail TEXT NOT NULL DEFAULT '');
 CREATE INDEX IF NOT EXISTS idx_bk_phone ON bookings(phone);
+CREATE TABLE IF NOT EXISTS block_rules (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  barber_id INTEGER,                 -- NULL = todo el local
+  weekdays TEXT NOT NULL,            -- "1,2,3" (0 = domingo)
+  start_time TEXT NOT NULL,          -- HH:MM
+  end_time TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  from_date TEXT NOT NULL,
+  until_date TEXT,                   -- NULL = sin fin
+  created_by TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS block_skips (
+  rule_id INTEGER NOT NULL,
+  day TEXT NOT NULL,
+  PRIMARY KEY (rule_id, day)
+);
+CREATE TABLE IF NOT EXISTS waitlist (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  email TEXT NOT NULL,
+  service_id INTEGER NOT NULL,
+  barber_id INTEGER NOT NULL DEFAULT 0,   -- 0 = cualquiera
+  day TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','notified','removed')),
+  notified_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_wait_day ON waitlist(status, day);
