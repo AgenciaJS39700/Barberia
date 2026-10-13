@@ -11,15 +11,74 @@
   "orientation": "portrait",
   "background_color": "#0F0F10",
   "theme_color": "#0F0F10",
-  "categories": ["lifestyle", "business"],
+  "categories": [
+    "lifestyle",
+    "business"
+  ],
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Reservar cita", "short_name": "Reservar", "url": "/?source=shortcut#reservas", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Mi club de puntos", "short_name": "Club", "url": "/?source=shortcut#club", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Encuentra tu corte", "short_name": "Cortes", "url": "/?source=shortcut#cortes", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "Reservar cita",
+      "short_name": "Reservar",
+      "url": "/?source=shortcut#reservas",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Mi club de puntos",
+      "short_name": "Club",
+      "url": "/?source=shortcut#club",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Encuentra tu corte",
+      "short_name": "Cortes",
+      "url": "/?source=shortcut#cortes",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Agenda del barbero",
+      "short_name": "Agenda",
+      "url": "/admin.html?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/admin-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

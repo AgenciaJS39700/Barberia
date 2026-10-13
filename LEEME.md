@@ -55,7 +55,9 @@ La web se instala en el móvil como una app (icono propio, pantalla completa, ab
 
 **Puesta en marcha:** ejecutar `migrations/003_push.sql` en la D1 (ya aplicada en `barberia`). Las claves de los avisos (VAPID) se crean solas la primera vez y se guardan en la tabla `settings`; no hay que configurar secretos. Opcional: fijarlas con `VAPID_PUBLIC` y `VAPID_PRIVATE_JWK`.
 
-**Archivos nuevos:** `manifest.webmanifest` · `admin.webmanifest` · `sw.js` (service worker: caché y avisos) · `pwa.js` · `offline.html` · `icons/`. Si cambias el logo, regenera `icons/` y sube `VERSION` en `sw.js`.
+**Una sola app (cliente + barbero):** el barbero abre el icono de la web, entra en «Acceso barbero» (pie de página) o en el atajo «Agenda del barbero» (mantener pulsado el icono) y, con la sesión recordada, la app instalada abre directo en la agenda. Desde la agenda, «Web de clientes» vuelve a la web.
+
+**Archivos nuevos:** `manifest.webmanifest` · `sw.js` (service worker: caché y avisos) · `pwa.js` · `offline.html` · `icons/`. Si cambias el logo, regenera `icons/` y sube `VERSION` en `sw.js`.
 
 **Seguridad:** el Worker solo envía avisos a los servicios de push oficiales (Google, Mozilla, Apple, Microsoft); las suscripciones de clientes exigen una cita real y se limitan a 4 dispositivos por cita; las de barbero exigen la contraseña del panel. Nunca se cachea `/api/*`.
 

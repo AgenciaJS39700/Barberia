@@ -20,8 +20,8 @@
   function androidHelp() {
     var d = document.createElement("dialog");
     d.setAttribute("aria-label", "Cómo instalar la app");
-    d.style.cssText = "max-width:24rem;width:calc(100% - 2rem);border:1px solid #3a3a3d;border-radius:1.2rem;background:#171718;color:#F5F1E8;padding:1.4rem;font:inherit";
-    d.innerHTML = "<h2 style='margin:0 0 .6rem;font-size:1.2rem;color:#E6C57A'>Instala la app en tu móvil</h2>" +
+    d.style.cssText = "max-width:24rem;width:calc(100% - 2rem);margin:auto;box-sizing:border-box;border:1px solid #3a3a3d;border-radius:1.2rem;background:#171718;color:#F5F1E8;padding:1.4rem;font:inherit";
+    d.innerHTML = "<h2 style='margin:0 0 .6rem;font-size:1.15rem;letter-spacing:0;text-transform:none;color:#E6C57A'>Instala la app en tu móvil</h2>" +
       "<ol style='padding-left:1.2rem;line-height:1.8;color:#d6d0c4'><li>Abre esta página en <b>Chrome</b> (no dentro de otra app).</li><li>Pulsa los <b>tres puntos ⋮</b> de arriba a la derecha.</li><li>Elige <b>Instalar aplicación</b> o <b>Añadir a pantalla de inicio</b>.</li><li>Confirma con <b>Instalar</b> y abre el icono nuevo.</li></ol>" +
       "<button type='button' style='margin-top:.8rem;width:100%;min-height:46px;border:0;border-radius:999px;background:#C9A24B;color:#111;font-weight:800;font:inherit;font-weight:800'>Entendido</button>";
     d.querySelector("button").addEventListener("click", function () { d.close(); d.remove(); });
@@ -31,8 +31,8 @@
   function iosHelp() {
     var d = document.createElement("dialog");
     d.setAttribute("aria-label", "Cómo instalar la app");
-    d.style.cssText = "max-width:24rem;width:calc(100% - 2rem);border:1px solid #3a3a3d;border-radius:1.2rem;background:#171718;color:#F5F1E8;padding:1.4rem;font:inherit";
-    d.innerHTML = "<h2 style='margin:0 0 .6rem;font-size:1.2rem;color:#E6C57A'>Instala la app en tu iPhone</h2>" +
+    d.style.cssText = "max-width:24rem;width:calc(100% - 2rem);margin:auto;box-sizing:border-box;border:1px solid #3a3a3d;border-radius:1.2rem;background:#171718;color:#F5F1E8;padding:1.4rem;font:inherit";
+    d.innerHTML = "<h2 style='margin:0 0 .6rem;font-size:1.15rem;letter-spacing:0;text-transform:none;color:#E6C57A'>Instala la app en tu iPhone</h2>" +
       "<ol style='padding-left:1.2rem;line-height:1.8;color:#d6d0c4'><li>Abre esta página en <b>Safari</b>.</li><li>Pulsa el botón <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li><li>Elige <b>Añadir a pantalla de inicio</b>.</li></ol>" +
       "<button type='button' style='margin-top:.8rem;width:100%;min-height:46px;border:0;border-radius:999px;background:#C9A24B;color:#111;font-weight:800;font:inherit;font-weight:800'>Entendido</button>";
     d.querySelector("button").addEventListener("click", function () { d.close(); d.remove(); });

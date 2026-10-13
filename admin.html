@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#C9A24B">
-<link rel="manifest" href="/admin.webmanifest">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/admin-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -41,7 +41,7 @@ input,select{min-width:0}
 <p id="lm" class="bx-msg" role="status"></p><button id="lg" type="button" class="bx-btn" style="width:100%">Entrar</button>
 </div>
 <div id="app" hidden>
-<div class="bar" id="tools" style="justify-content:space-between"><div class="acts"><button type="button" class="bx-ghost" id="pushbtn">🔔 Avisos de citas</button><button type="button" class="bx-ghost" id="pushtest" hidden>Probar aviso</button><button type="button" class="bx-ghost" data-install hidden>Instalar la app</button></div><button type="button" class="bx-ghost" id="out">Salir</button></div>
+<div class="bar" id="tools" style="justify-content:space-between"><div class="acts"><button type="button" class="bx-ghost" id="pushbtn">🔔 Avisos de citas</button><button type="button" class="bx-ghost" id="pushtest" hidden>Probar aviso</button><button type="button" class="bx-ghost" data-install hidden>Instalar la app</button></div><span class="acts"><a class="bx-ghost" href="/?web=1" style="display:inline-flex;align-items:center;text-decoration:none">Web de clientes</a><button type="button" class="bx-ghost" id="out">Salir</button></span></div>
 <p id="pushmsg" class="bx-msg" role="status" style="margin:.2rem 0 .8rem"></p>
 <div class="bar" role="tablist" id="tabs"></div>
 <div id="view"></div>
@@ -117,20 +117,33 @@ function ajustes(v){CAT=null;return Promise.all([catalog(),api("GET","pay")]).th
 
 function resumen(v){return api("GET","stats").then(function(s){v.innerHTML="<h2>Últimos 30 días</h2><div class='stats'><div class='stat'><b>"+s.total+"</b>citas</div><div class='stat'><b>"+(s.done||0)+"</b>realizadas</div><div class='stat'><b>"+(s.noshow||0)+"</b>no vinieron</div><div class='stat'><b>"+(s.cancelled||0)+"</b>canceladas</div><div class='stat'><b>"+eur(s.revenue||0)+"</b>facturado (realizadas)</div><div class='stat'><b>"+s.clients+"</b>socios del club</div></div>"})}
 
-function login(){TOKEN=$("#tk").value;api("GET","stats").then(function(){try{sessionStorage.setItem("bbt",TOKEN);if($("#rm").checked)localStorage.setItem("bbt",TOKEN);else localStorage.removeItem("bbt")}catch(e){}shell()}).catch(function(e){$("#lm").textContent=e.status===401?"Contraseña incorrecta.":e.message;$("#lm").className="bx-msg err"})}
+function login(){TOKEN=$("#tk").value;api("GET","stats").then(function(){try{sessionStorage.setItem("bbt",TOKEN);if($("#rm").checked)localStorage.setItem("bbt",TOKEN);else localStorage.removeItem("bbt")}catch(e){}shell();setTimeout(askPush,900)}).catch(function(e){$("#lm").textContent=e.status===401?"Contraseña incorrecta.":e.message;$("#lm").className="bx-msg err"})}
 $("#lg").onclick=login;$("#tk").onkeydown=function(e){if(e.key==="Enter")login()};
 /* Avisos push y utilidades de la app del barbero */
 function pushState(){var m=$("#pushmsg"),b=$("#pushbtn"),t=$("#pushtest");if(!window.BBPWA){return}
  BBPWA.current().then(function(sub){var on=!!sub&&Notification.permission==="granted";b.textContent=on?"🔕 Desactivar avisos":"🔔 Activar avisos de citas";b.dataset.on=on?"1":"";t.hidden=!on;
-  m.className="bx-msg";m.textContent=on?"Avisos activados en este móvil: te llegará una notificación con cada cita nueva o cancelada.":(BBPWA.ios&&!BBPWA.standalone()?"En iPhone: instala primero la app (Compartir → Añadir a pantalla de inicio) y ábrela desde el icono para activar los avisos.":"")})}
+  m.className="bx-msg";m.textContent=on?"Avisos activados en este móvil: te llegará una notificación con cada cita nueva o cancelada.":(window.Notification&&Notification.permission==="denied"?"Las notificaciones están bloqueadas. Actívalas en los ajustes del móvil: mantén pulsado el icono de la app → Información de la app → Notificaciones → Permitir. Después vuelve aquí y pulsa Activar.":BBPWA.ios&&!BBPWA.standalone()?"En iPhone: instala primero la app (Compartir → Añadir a pantalla de inicio) y ábrela desde el icono para activar los avisos.":"")})}
 $("#pushbtn").onclick=function(){var b=this,m=$("#pushmsg");if(!window.BBPWA){return}b.disabled=true;
  var op=b.dataset.on?BBPWA.unsubscribe({admin:true,token:TOKEN}):BBPWA.subscribe({admin:true,token:TOKEN});
  op.then(function(){b.disabled=false;pushState()}).catch(function(e){b.disabled=false;m.className="bx-msg err";m.textContent=e&&e.friendly?e.message:"No se pudo cambiar el aviso."})};
 $("#pushtest").onclick=function(){var m=$("#pushmsg");api("POST","push/test",{}).then(function(){m.className="bx-msg ok";m.textContent="Enviado: en unos segundos debería sonar el aviso."}).catch(function(e){m.className="bx-msg err";m.textContent=e.message})};
 $("#out").onclick=function(){try{sessionStorage.removeItem("bbt");localStorage.removeItem("bbt")}catch(x){}location.reload()};
+
+/* Aviso automático la primera vez: pide activar las notificaciones con un toque */
+function askPush(){
+ try{if(!window.BBPWA||!BBPWA.supported()||!window.Notification||Notification.permission!=="default")return;
+  if(BBPWA.ios&&!BBPWA.standalone())return;if(localStorage.getItem("bbpa"))return}catch(e){return}
+ BBPWA.current().then(function(sub){if(sub)return;
+  var d=document.createElement("dialog");d.setAttribute("aria-labelledby","pa-t");
+  d.style.cssText="max-width:24rem;width:calc(100% - 2rem);margin:auto;box-sizing:border-box;border:1px solid #3a3a3d;border-radius:1.2rem;background:#171718;color:#F5F1E8;padding:1.4rem;font:inherit";
+  d.innerHTML="<h2 id='pa-t' style='margin:0 0 .5rem;font-size:1.15rem;letter-spacing:0;text-transform:none;color:#E6C57A'>🔔 No te pierdas ninguna cita</h2><p style='margin:0 0 1rem;line-height:1.5;color:#d6d0c4'>Activa los avisos y te sonará el móvil cuando entre una cita nueva, cambie o se cancele, aunque tengas la app cerrada.</p><button type='button' id='pa-y' class='bx-btn' style='width:100%;margin-bottom:.5rem'>Activar avisos ahora</button><button type='button' id='pa-n' class='bx-ghost' style='width:100%'>Más tarde</button>";
+  function fin(){try{localStorage.setItem("bbpa",String(Date.now()))}catch(e){}d.close();d.remove()}
+  d.querySelector("#pa-y").onclick=function(){fin();$("#pushbtn").click()};
+  d.querySelector("#pa-n").onclick=fin;d.addEventListener("cancel",function(){try{localStorage.setItem("bbpa",String(Date.now()))}catch(e){}});
+  document.body.appendChild(d);d.showModal()})}
 window.addEventListener("load",function(){setTimeout(pushState,300)});
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&TOKEN&&TAB==="agenda"&&!$("#app").hidden)show()});
-if(TOKEN){api("GET","stats").then(shell).catch(function(){})}
+if(TOKEN){api("GET","stats").then(function(){shell();setTimeout(askPush,900)}).catch(function(){})}
 })();
 </script>
 <script src="pwa.js" defer></script>

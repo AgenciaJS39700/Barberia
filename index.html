@@ -8,6 +8,7 @@
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#0F0F10">
 <link rel="manifest" href="/manifest.webmanifest">
+<script>/* App instalada en el móvil del barbero (sesión recordada): abre directamente la agenda */(function(){try{if(/[?&]source=pwa/.test(location.search)&&!/[?&]web=1/.test(location.search)&&localStorage.getItem("bbt")&&(matchMedia("(display-mode: standalone)").matches||navigator.standalone))location.replace("/admin.html")}catch(e){}})()</script>
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -240,6 +241,7 @@
 <div class="mt-10 flex flex-col items-center justify-between gap-3 border-t border-line pt-6 text-xs text-mute sm:flex-row">
 <p>&copy; <span id="anio"></span> Infinity Barber. Todos los derechos reservados.</p>
 <button type="button" data-install hidden class="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-gold px-5 font-bold text-gold-light hover:bg-gold hover:text-ink">Instalar la app</button>
+<a href="/admin.html" rel="nofollow" class="text-xs text-mute hover:text-gold-light">Acceso barbero</a>
 <nav aria-label="Legal" class="flex flex-wrap justify-center gap-4"><a href="#aviso-legal" data-legal="aviso" class="hover:text-gold-light">Aviso legal</a><a href="#privacidad" data-legal="privacidad" class="hover:text-gold-light">Privacidad</a><a href="#cookies" data-legal="cookies" class="hover:text-gold-light">Cookies</a></nav>
 </div>
 </div>
