@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "La Barbería",
-  "short_name": "La Barbería",
-  "description": "Reserva tu cita, consulta tu club de puntos y encuentra tu corte en La Barbería, Castro Urdiales.",
+  "name": "Barbería",
+  "short_name": "Barbería",
+  "description": "Reserva tu cita, consulta tu club de puntos y encuentra tu corte en Barbería, Castro Urdiales.",
   "lang": "es",
   "dir": "ltr",
   "start_url": "/?source=pwa",

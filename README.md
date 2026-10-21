@@ -1,2 +1,2 @@
 # Barberia
-La Barbería
+Barbería

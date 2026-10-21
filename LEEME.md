@@ -1,4 +1,4 @@
-# La Barbería · web con reservas, club y "Encuentra tu corte"
+# Barbería · web con reservas, club y "Encuentra tu corte"
 
 Cloudflare Worker + D1 (`barberia`) + correos con Brevo. Todo gratis en el plan free.
 

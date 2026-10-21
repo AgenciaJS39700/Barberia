@@ -1,4 +1,4 @@
-/* app.css · reservas, cuenta, club y "Encuentra tu corte" (La Barbería) */
+/* app.css · reservas, cuenta, club y "Encuentra tu corte" (Barbería) */
 :root{--g:#C9A24B;--gl:#E6C57A;--ink:#0F0F10;--coal:#161617;--card:#1D1D1F;--line:#2C2C2F;--bone:#F5F1E8;--mute:#A8A29A;--ok:#7BC47F;--bad:#E07A6B}
 .bk,.cx,.cl{font-family:inherit;color:var(--bone)}
 .bk [hidden],.cx [hidden],.cl [hidden]{display:none!important}

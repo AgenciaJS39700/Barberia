@@ -1,4 +1,4 @@
--- La Barbería · esquema D1 (SQLite). Fechas/horas de citas como texto local "YYYY-MM-DD HH:MM" (Europe/Madrid).
+-- Barbería · esquema D1 (SQLite). Fechas/horas de citas como texto local "YYYY-MM-DD HH:MM" (Europe/Madrid).
 CREATE TABLE services (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, minutes INTEGER NOT NULL CHECK (minutes BETWEEN 5 AND 480), price_cents INTEGER NOT NULL CHECK (price_cents >= 0), active INTEGER NOT NULL DEFAULT 1, sort INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE barbers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1, sort INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE settings (k TEXT PRIMARY KEY, v TEXT NOT NULL);

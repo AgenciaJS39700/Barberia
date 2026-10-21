@@ -1,4 +1,4 @@
--- Datos de ejemplo de La Barbería (editables desde el panel /admin.html)
+-- Datos de ejemplo de Barbería (editables desde el panel /admin.html)
 INSERT INTO services (name, minutes, price_cents, sort) VALUES
  ('Corte de pelo tradicional / moderno', 30, 1400, 1),
  ('Degradado / Fade', 40, 1500, 2),
