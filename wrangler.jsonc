@@ -8,9 +8,9 @@
   ],
   "triggers": { "crons": ["*/15 * * * *"] },
   "vars": {
-    "SHOP_NAME": "Infinity Barber",
+    "SHOP_NAME": "La Barbería",
     "MAIL_FROM": "agencia39700@gmail.com",
-    "MAIL_FROM_NAME": "Infinity Barber",
+    "MAIL_FROM_NAME": "La Barbería",
     "OWNER_EMAIL": "agencia39700@gmail.com",
     "SHOP_PHONE": "+34 942 00 11 22",
     "SHOP_WHATSAPP": "34611223344",

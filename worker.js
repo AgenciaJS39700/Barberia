@@ -1,4 +1,4 @@
-// worker.js · API de Infinity Barber (Cloudflare Workers + D1)
+// worker.js · API de La Barbería (Cloudflare Workers + D1)
 // Reservas con huecos reales, cuentas, club de puntos, recordatorios por correo (Cron) y panel de administración.
 // Push:    GET /api/push/key · POST /api/push/{subscribe,unsubscribe}  ·  Admin: /api/admin/push/{subscribe,unsubscribe,count,test}
 // Público: GET /api/config · GET /api/availability · POST /api/book · GET /api/booking · POST /api/cancel
@@ -68,7 +68,7 @@ const randomHex = (n) => hex(crypto.getRandomValues(new Uint8Array(n)));
 async function sha256(text) { return hex(await crypto.subtle.digest("SHA-256", te.encode(text))); }
 const escHtml = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const eur = (c) => (c / 100).toFixed(2).replace(".", ",") + " €";
-const shopName = (env) => env.SHOP_NAME || "Infinity Barber";
+const shopName = (env) => env.SHOP_NAME || "La Barbería";
 const publicOrigin = (env, request) => env.SITE_URL || new URL(request.url).origin;
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 const cleanEmail = (v) => String(v || "").trim().toLowerCase().slice(0, 254);
@@ -1369,7 +1369,7 @@ function bookingBlock(b) {
 }
 function gcal(b) {
   const f = (dt) => dt.replace(/[-: ]/g, "").slice(0, 13) + "00";
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Cita en Infinity Barber")}&dates=${f(b.start_at)}/${f(addMin(b.start_at, 30))}&ctz=${encodeURIComponent(TZ)}`;
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Cita en La Barbería")}&dates=${f(b.start_at)}/${f(addMin(b.start_at, 30))}&ctz=${encodeURIComponent(TZ)}`;
 }
 function mailBooked(env, b, origin, title = "Cita confirmada") {
   const link = `${origin}/?cita=${b.code}`, paid = !!b.paid_cents;

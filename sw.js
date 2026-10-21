@@ -1,8 +1,8 @@
-/* sw.js · Service worker de Infinity Barber
+/* sw.js · Service worker de La Barbería
    - Guarda la "carcasa" de la web para abrir al instante y funcionar sin conexión (página offline).
    - Nunca guarda /api/* (reservas, cuentas y panel siempre van a la red).
    - Recibe avisos push (cita nueva para el barbero, recordatorios para el cliente). */
-const VERSION = "bb-v5";
+const VERSION = "bb-v6";
 const SHELL = ["/offline.html", "/app.css", "/app.js", "/cortes.js", "/pwa.js", "/manifest.webmanifest", "/icons/icon-192.png"];
 
 self.addEventListener("install", (e) => {
@@ -44,8 +44,8 @@ self.addEventListener("fetch", (e) => {
 
 self.addEventListener("push", (e) => {
   let d = {};
-  try { d = e.data ? e.data.json() : {}; } catch { d = { title: "Infinity Barber", body: e.data ? e.data.text() : "" }; }
-  const title = String(d.title || "Infinity Barber").slice(0, 80);
+  try { d = e.data ? e.data.json() : {}; } catch { d = { title: "La Barbería", body: e.data ? e.data.text() : "" }; }
+  const title = String(d.title || "La Barbería").slice(0, 80);
   e.waitUntil(self.registration.showNotification(title, {
     body: String(d.body || "").slice(0, 200),
     icon: d.admin ? "/icons/admin-192.png" : "/icons/icon-192.png",

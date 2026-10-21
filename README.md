@@ -1,2 +1,2 @@
 # Barberia
-Barberia Infinity
+La Barbería

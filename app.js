@@ -1,4 +1,4 @@
-/* app.js · reservas reales, cuenta, club de puntos (Infinity Barber). Sin librerías. */
+/* app.js · reservas reales, cuenta, club de puntos (La Barbería). Sin librerías. */
 (function () {
 "use strict";
 var $ = function (s, r) { return (r || document).querySelector(s); };
@@ -222,7 +222,7 @@ function wirePush(btn, out, code) {
 }
 
 function showBooked(b, hasEmail) {
-  var cal = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("Cita en Infinity Barber") + "&dates=" + b.start.replace(/[-: ]/g, "").slice(0, 13) + "00/" + b.start.replace(/[-: ]/g, "").slice(0, 13) + "00&ctz=Europe%2FMadrid";
+  var cal = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("Cita en La Barbería") + "&dates=" + b.start.replace(/[-: ]/g, "").slice(0, 13) + "00/" + b.start.replace(/[-: ]/g, "").slice(0, 13) + "00&ctz=Europe%2FMadrid";
   root.innerHTML = "<div class='bk-ok'><div class='tick' aria-hidden='true'>✓</div><h3 style='margin:0 0 .5rem;font-size:1.3rem;color:var(--bone);text-transform:none;letter-spacing:0'>¡Cita confirmada!</h3>" +
     "<p style='font-size:1.05rem;line-height:1.6'><b>" + esc(b.whenText) + "</b><br>" + esc(b.service) + " · " + eur(b.price_cents) + (b.barber ? "<br>Con " + esc(b.barber) : "") + "</p>" +
     "<p class='bx-small' style='margin:1rem 0'>" + (hasEmail ? "Te hemos enviado la confirmación por correo y te avisaremos 24 h antes." : "Guarda esta página: no dejaste correo, así que no recibirás recordatorio. Te avisaremos por WhatsApp si hace falta.") + "</p>" +
